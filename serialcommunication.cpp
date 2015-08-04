@@ -16,19 +16,11 @@ void sendSerialReply( char *message )
   }
 }
 
-void sendSerialReply(char *message, int l)
-{
-  int i =0;
-  for(i=0; i<l; ++i) {
-    Serial.write(convertToHex(message[i]));
-  }
-}
-
 void sendBluetoothRequest(SoftwareSerial* serial, char* message)
 {
   int i = 0;
   while( message[i] != '\0' ) {
-    serial->write(message[i++]);
+    serial->print(message[i++]);
   }
 }
 
@@ -36,7 +28,10 @@ void sendBluetoothRequest(SoftwareSerial* serial, char *message, int l)
 {
   int i =0;
   for(i=0; i<l; ++i) {
-    serial->write(convertToHex(message[i]));
+    if ((unsigned char) message[i] < 0x10 ) {
+      serial->print(0x00, HEX);
+    }
+    serial->print((unsigned char)message[i], HEX);
   }
 }
 
@@ -64,21 +59,10 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
 
       generateBluetoothAddMessage(inputString, encryptedPassword, message);
       
+      //send message
       sendBluetoothRequest(serial, message);
-      sendBluetoothRequest(serial, encryptedPassword, 16);
-      serial->println("");
-      
-      /*
-      verific atat cu serial monitor cat si cu Qt
-      1. verific in main ca merge algorithm-ul de cryptare/decryptare( aceeasi valoare )
-      2. verific aici ca merge algorithm-ul de cryptare/decryptare
-      3. verific ca pot sa trimite bytes
-      4. fac perechi de 2 nibble si trimit la telefon( doar pentru parola )
-      
-      cand primesc trebuie sa primesc deja ca bytes si nu trebuie sa fac schimbari
-      */
-      
-      
+      sendBluetoothRequest(serial, encryptedPassword, 16); //use this for password
+      serial->println(""); 
       break;
     case 2:
       // retrive entry
@@ -104,11 +88,13 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
 
 void bluetoothProcessReply(char *inputString)
 {
-  char encryptedPassword[KEY_SIZE];
+  char encryptedPassword[2 * KEY_SIZE];
+  char shortEncryptedPassword[KEY_SIZE];
   char password[KEY_SIZE];
   char message[100];
   
-  memset(encryptedPassword,0,KEY_SIZE);
+  memset(encryptedPassword,0,2 * KEY_SIZE);
+  memset(shortEncryptedPassword, 0, KEY_SIZE);
   memset(password,0,KEY_SIZE);
   memset(message,0,100);
   
@@ -122,12 +108,12 @@ void bluetoothProcessReply(char *inputString)
       break;
     case 2:
       // retrive entry
-      sendSerialReply(inputString);
-      /*getEncryptedPassword(inputString, encryptedPassword);
+      getEncryptedPassword(inputString, encryptedPassword);
+      generateShortPassword(encryptedPassword, shortEncryptedPassword);
       keyExpansion(key, expansionKey);
-      invCipher(encryptedPassword, expansionKey, &password);
+      invCipher(shortEncryptedPassword, expansionKey, &password);
       generateSerialRetriveMessage(password, message);
-      sendSerialReply(message);*/
+      sendSerialReply(message);
       break;
     case 3:
       // delete entry - no need to process, send directly to serial

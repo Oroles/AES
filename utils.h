@@ -10,6 +10,6 @@ void getKey(const char* message, char* key);
 void generateBluetoothAddMessage(const char* input, const char* password, char* message);
 void generateBluetoothRetriveMessage(const char* input, char *message);
 void generateSerialRetriveMessage(const char* input, char* password);
-unsigned char convertToHex( char data );
+void generateShortPassword(const char* longPassword, char *password);
 
 #endif

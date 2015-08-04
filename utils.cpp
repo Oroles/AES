@@ -36,7 +36,7 @@ void getPassword(const char* message, char* password) {
 
 void getEncryptedPassword(const char* message, char *encryptedPassword) {
   const char* p = strchr(message,SPLITTER);
-  strncpy(encryptedPassword, p+1, strlen(p)-2);
+  strncpy(encryptedPassword, &message[2], 32);
 }
 
 void getKey(const char* message, char* key) {
@@ -76,32 +76,43 @@ void generateSerialRetriveMessage(const char* password, char* message)
 }
 
 unsigned char convertToHex( char data ) {
-      	switch (data)
-      	{
-      		case '0': return 0x0;
-      		case '1': return 0x1;
-      		case '2': return 0x2;
-      		case '3': return 0x3;
-      		case '4': return 0x4;
-      		case '5': return 0x5;
-      		case '6': return 0x6;
-      		case '7': return 0x7;
-      		case '8': return 0x8;
-      		case '9': return 0x9;
-      		case 'A': return 10;
-      		case 'a': return 10;
-      		case 'B': return 11;
-      		case 'b': return 11;
-      		case 'C': return 12;
-      		case 'c': return 12;
-      		case 'D': return 13;
-      		case 'd': return 13;
-      		case 'E': return 14;
-      		case 'e': return 14;
-      		case 'F': return 15;
-      		case 'f': return 15;
-                default: return 0x0;
-      	}
+  switch (data)
+  {
+    case '0': return 0x00;
+    case '1': return 0x01;
+    case '2': return 0x02;
+    case '3': return 0x03;
+    case '4': return 0x04;
+    case '5': return 0x05;
+    case '6': return 0x06;
+    case '7': return 0x07;
+    case '8': return 0x08;
+    case '9': return 0x09;
+    case 'A': return 0x0A;
+    case 'a': return 0x0A;
+    case 'B': return 0x0B;
+    case 'b': return 0x0B;
+    case 'C': return 0x0C;
+    case 'c': return 0x0C;
+    case 'D': return 0x0D;
+    case 'd': return 0x0D;
+    case 'E': return 0x0E;
+    case 'e': return 0x0E;
+    case 'F': return 0x0F;
+    case 'f': return 0x0F;
+    default: return 0x00;
+  }
+}
+
+void generateShortPassword(const char* longPassword, char *password)
+{
+  int i = 0;
+  for( i = 0; i < 32; i+=2 )
+  {
+    unsigned char MSB = convertToHex(longPassword[i]);
+    unsigned char LSB = convertToHex(longPassword[i+1]);
+    password[i/2] = ( ( MSB << 4 ) | LSB );
+  }
 }
 
 
