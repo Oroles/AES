@@ -79,6 +79,9 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
       // obtain websites - no need to process, send directly to phone
       sendBluetoothRequest(serial, inputString);
       break;
+    case 5:
+      // close bluetooth the connection
+      sendBluetoothRequest(serial, inputString);
     default:
       memset(key, 0, KEY_SIZE);
       // error, so ignore data
@@ -123,6 +126,9 @@ void bluetoothProcessReply(char *inputString)
       // obtain websites - no need to process, send directly to serial
       sendSerialReply(inputString);
       break;
+    case 5:
+      // close serial connection
+      sendSerialReply(inputString);
     default:
       // error, so ignore data
       break;   
