@@ -4,13 +4,15 @@
 #include "aes.h"
 #include "utils.h"
 
+static const int MESSAGE_SIZE = 100;
+
 // buffer for serial communication
-char inputSerial[100];
+char inputSerial[MESSAGE_SIZE];
 unsigned int sizeInputSerial = 0;
 boolean serialComplete = false;
 
 // buffer for bluetooth communication
-char inputBluetooth[100];
+char inputBluetooth[MESSAGE_SIZE];
 unsigned int sizeInputBluetooth = 0;
 boolean bluetoothComplete = false;
 
@@ -25,7 +27,7 @@ void receiveSerialMessage()
     //bluetoothSerial->write(inputSerial);
 
     // clear data
-    memset(&inputSerial[0], 0, 100);
+    memset(&inputSerial[0], 0, MESSAGE_SIZE);
     sizeInputSerial = 0;
     serialComplete = false;
   }
@@ -39,7 +41,7 @@ void receiveBluetoothMessage()
     //Serial.write(inputBluetooth);
     
     // clear data
-    memset(&inputBluetooth[0], 0, 100);
+    memset(&inputBluetooth[0], 0, MESSAGE_SIZE);
     sizeInputBluetooth = 0;
     bluetoothComplete = false;
   }
@@ -53,7 +55,7 @@ void serialEvent() {
     inputSerial[sizeInputSerial++] = inChar;
     
     // check not to overflow buffer
-    if ( sizeInputSerial >= 100 )
+    if ( sizeInputSerial >= MESSAGE_SIZE )
     {
       //read to much data so ignore command, therefore
       sizeInputSerial = 0;
@@ -74,7 +76,7 @@ void bluetoothEvent() {
     char inChar = (char)bluetoothSerial->read();
   
     // check not to overflow buffer
-    if( sizeInputBluetooth >= 100 )
+    if( sizeInputBluetooth >= MESSAGE_SIZE )
     {
       //read to much data so ignore command, therefore
       sizeInputBluetooth = 0;

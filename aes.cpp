@@ -168,7 +168,7 @@ void invMixColumns(char (*in)[4][4]) {
 	}
 }
 
-void cipher(char in[16], unsigned long w[44], char (*out)[16]) {
+void cipher(char in[16], unsigned long w[44], char *out) {
 	char state[4][4];
 
 	// initialize the state
@@ -200,12 +200,12 @@ void cipher(char in[16], unsigned long w[44], char (*out)[16]) {
 	for(i = 0; i < 4; ++i) {
 		int j;
 		for(j=0; j < 4; ++j) {
-			(*out)[4*j+i] = state[i][j];
+			out[4*j+i] = state[i][j];
 		}
 	}
 }
 
-void invCipher(char in[16], unsigned long w[44], char (*out)[16]) {
+void invCipher(char in[16], unsigned long w[44], char *out) {
 	char state[4][4];
 
         unsigned char i = 0;
@@ -231,7 +231,7 @@ void invCipher(char in[16], unsigned long w[44], char (*out)[16]) {
         for(i=0; i<4; ++i) {
                 unsigned char j=0;
                 for(j=0; j < 4; ++j) {
-                        (*out)[4*i+j] = state[j][i];
+                        out[4*i+j] = state[j][i];
                 }
         }
 }

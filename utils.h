@@ -3,13 +3,16 @@
 
 #include <string.h>
 
+const char SPLITTER = ':';
+const char END_COMMAND = '\n';
+
 int getTypeCommand(const char* message);
-void getPassword(const char* message, char* password);
-void getEncryptedPassword(const char* message, char *encryptedPassword);
-void getKey(const char* message, char* key);
-void generateBluetoothAddMessage(const char* input, const char* password, char* message);
+void generateBluetoothAddMessage(const char* input, char* message);
 void generateBluetoothRetriveMessage(const char* input, char *message);
-void generateSerialRetriveMessage(const char* input, char* password);
 void generateShortPassword(const char* longPassword, char *password);
+void generateSerialRetriveMessage(const char* input, char* password);
+
+bool getThirdMessage(const char* input, char* result);
+bool getLastMessage(const char* input, char* result);
 
 #endif

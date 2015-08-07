@@ -3,7 +3,9 @@
 #include "aes.h"
 #include <Arduino.h>
 
-static const int KEY_SIZE = 16; //needs extra one for '\0'
+static const int KEY_SIZE = 16;
+static const int PASSWORD_SIZE = 100;
+static const int MESSAGE_SIZE = 200;
 
 static unsigned long expansionKey[44];
 static char key[KEY_SIZE];
@@ -37,38 +39,64 @@ void sendBluetoothRequest(SoftwareSerial* serial, char *message, int l)
 
 void serialProcessRequest(SoftwareSerial* serial, char* inputString)
 {
-  char password[KEY_SIZE]; //no longer than 16 characters
-  char encryptedPassword[KEY_SIZE]; //ecrypted password will be on 16 bytes
-  char message[100]; //message that will be send to the bluetooth
-  char retrieveEntryMessage[100];
+  char password[PASSWORD_SIZE]; //no longer than 16 characters
+  char encryptedPassword[PASSWORD_SIZE]; //ecrypted password will be on 16 bytes
+  char message[MESSAGE_SIZE]; //message that will be send to the bluetooth
+  char retrieveEntryMessage[MESSAGE_SIZE];
   
-  memset(password,0,KEY_SIZE);
-  memset(encryptedPassword,0,KEY_SIZE);
-  memset(message,0,100);
-  memset(retrieveEntryMessage,0,100);
+  memset(password, 0, PASSWORD_SIZE);
+  memset(encryptedPassword, 0, PASSWORD_SIZE);
+  memset(message, 0, MESSAGE_SIZE);
+  memset(retrieveEntryMessage, 0, MESSAGE_SIZE);
   
   int typeCommand = getTypeCommand(inputString);
   switch (typeCommand)
   {
     case 1:
       // add new entry
-      getPassword(inputString, password);
-      getKey(inputString, key);
-      keyExpansion(key, expansionKey);
-      cipher(password, expansionKey, &encryptedPassword);
 
-      generateBluetoothAddMessage(inputString, encryptedPassword, message);
+      // process key
+      getLastMessage(inputString, key);
+      keyExpansion(key, expansionKey);
+      memset(key, 0, KEY_SIZE); //remove the key
+
+      // process password
+      getThirdMessage(inputString, password);
+
+      if ( strlen(password) % KEY_SIZE == 0 ) {
+        //corect size we can process it
+
+        //encrypte message
+        int steps = strlen(password) / KEY_SIZE;
+        int contor = 0;
+        while ( contor < steps ) {
+          cipher(&password[contor * KEY_SIZE], expansionKey, &encryptedPassword[contor * KEY_SIZE]);
+          ++contor;
+        }
+
+        //generate request
+        generateBluetoothAddMessage(inputString, message);
       
-      //send message
-      sendBluetoothRequest(serial, message);
-      sendBluetoothRequest(serial, encryptedPassword, 16); //use this for password
-      serial->println(""); 
+        //send message
+        sendBluetoothRequest(serial, message);
+        sendBluetoothRequest(serial, encryptedPassword, strlen(password));
+        serial->println("");
+      } else {
+        Serial.print("1:Fail\n"); //remove hardcoded part
+      }
+
       break;
     case 2:
       // retrive entry
-      memset(key,0,16);
-      getKey(inputString,key);
-      generateBluetoothRetriveMessage(inputString,retrieveEntryMessage);
+
+      // process key
+      memset(key, 0, KEY_SIZE);
+      getLastMessage(inputString, key);
+
+      // generate request
+      generateBluetoothRetriveMessage(inputString, retrieveEntryMessage);
+
+      // send message
       sendBluetoothRequest(serial, retrieveEntryMessage);
       break;
     case 3:
@@ -80,7 +108,7 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
       sendBluetoothRequest(serial, inputString);
       break;
     case 5:
-      // close bluetooth the connection
+      // close bluetooth the connection - no need to process, send directly to phone
       sendBluetoothRequest(serial, inputString);
     default:
       memset(key, 0, KEY_SIZE);
@@ -91,15 +119,15 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
 
 void bluetoothProcessReply(char *inputString)
 {
-  char encryptedPassword[2 * KEY_SIZE];
-  char shortEncryptedPassword[KEY_SIZE];
-  char password[KEY_SIZE];
-  char message[100];
+  char encryptedPassword[2 * PASSWORD_SIZE];
+  char shortEncryptedPassword[PASSWORD_SIZE];
+  char password[PASSWORD_SIZE];
+  char message[MESSAGE_SIZE];
   
-  memset(encryptedPassword,0,2 * KEY_SIZE);
-  memset(shortEncryptedPassword, 0, KEY_SIZE);
-  memset(password,0,KEY_SIZE);
-  memset(message,0,100);
+  memset(encryptedPassword, 0, 2 * PASSWORD_SIZE);
+  memset(shortEncryptedPassword, 0, PASSWORD_SIZE);
+  memset(password, 0, PASSWORD_SIZE);
+  memset(message, 0, MESSAGE_SIZE);
   
   int typeCommand = getTypeCommand(inputString);
   switch (typeCommand)
@@ -111,12 +139,31 @@ void bluetoothProcessReply(char *inputString)
       break;
     case 2:
       // retrive entry
-      getEncryptedPassword(inputString, encryptedPassword);
-      generateShortPassword(encryptedPassword, shortEncryptedPassword);
+
+      // process key - as putea sa tin in memorie expansionkey-ul asa ar fi mai greu de procesat
       keyExpansion(key, expansionKey);
-      invCipher(shortEncryptedPassword, expansionKey, &password);
-      generateSerialRetriveMessage(password, message);
-      sendSerialReply(message);
+      memset(key, 0, KEY_SIZE);
+
+      // process password
+      getLastMessage(inputString, encryptedPassword);
+      generateShortPassword(encryptedPassword, shortEncryptedPassword);
+
+      if ( strlen(shortEncryptedPassword) % KEY_SIZE == 0 ) {
+
+        // decrypt message
+        int steps = strlen(shortEncryptedPassword) / KEY_SIZE;
+        int contor = 0;
+        while( contor < steps ) {
+          invCipher(&shortEncryptedPassword[contor * KEY_SIZE], expansionKey, &password[contor * KEY_SIZE]);
+          ++contor;
+        }
+
+        generateSerialRetriveMessage(password, message);
+        sendSerialReply(message);
+      } else {
+        Serial.print("2:Fail\n"); // //remove hardcoded part
+      }
+
       break;
     case 3:
       // delete entry - no need to process, send directly to serial
