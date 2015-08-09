@@ -158,10 +158,10 @@ void bluetoothProcessReply(char *inputString)
           ++contor;
         }
 
-        generateSerialRetriveMessage(password, message);
+        generateSerialRetriveMessage(inputString, password, message);
         sendSerialReply(message);
       } else {
-        Serial.print("2:Fail\n"); // //remove hardcoded part
+        Serial.print("2:0:Fail\n"); // //remove hardcoded part
       }
 
       break;

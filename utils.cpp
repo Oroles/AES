@@ -62,11 +62,11 @@ void generateBluetoothRetriveMessage(const char* input, char *message)
   message[p-input] = END_COMMAND;
 }
 
-void generateSerialRetriveMessage(const char* password, char* message)
+void generateSerialRetriveMessage(const char* input, const char* password, char* message)
 {
-  strncpy(message,"2:",2);
-  strncpy(&message[2], password, strlen(password));
-  message[2 + strlen(password)] = '\n';
+  strncpy(message, input, 4); //will copy "2:status:"
+  strncpy(&message[4], password, strlen(password));
+  message[4 + strlen(password)] = '\n';
 }
 
 unsigned char convertToHex( char data ) {
