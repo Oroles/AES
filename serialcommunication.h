@@ -7,5 +7,6 @@ void sendSerialReply(char *message);
 void serialProcessRequest(SoftwareSerial* serial, char* message);
 void sendBluetoothRequest(SoftwareSerial* serial, char* command);
 void bluetoothProcessReply(char *command);
+void readKey();
 
 #endif

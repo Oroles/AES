@@ -94,6 +94,7 @@ void bluetoothEvent() {
 void setup() {
   Serial.begin(9600);
   bluetoothSerial->begin(9600);
+  readKey();
 }
 
 void loop() {

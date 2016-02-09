@@ -10,6 +10,12 @@ static const int MESSAGE_SIZE = 200;
 static unsigned long expansionKey[44];
 static char key[KEY_SIZE];
 
+void readKey() {
+  for ( int i = 0; i < KEY_SIZE; ++i ) {
+    key[i] = ( i % 8 ) + '0';
+  }
+}
+
 void sendSerialReply( char *message )
 {
   int i = 0;
@@ -37,6 +43,18 @@ void sendBluetoothRequest(SoftwareSerial* serial, char *message, int l)
   }
 }
 
+void debug(char *message, int l)
+{
+  int i =0;
+  for(i=0; i<l; ++i) {
+    if ((unsigned char) message[i] < 0x10 ) {
+      Serial.print(0x00, HEX);
+    }
+    Serial.print((unsigned char)message[i], HEX);
+  }
+  Serial.print("\n");
+}
+
 void serialProcessRequest(SoftwareSerial* serial, char* inputString)
 {
   char password[PASSWORD_SIZE]; //no longer than 16 characters
@@ -56,12 +74,17 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
       // add new entry
 
       // process key
-      getLastMessage(inputString, key);
+      //getLastMessage(inputString, key);
       keyExpansion(key, expansionKey);
-      memset(key, 0, KEY_SIZE); //remove the key
+      //memset(key, 0, KEY_SIZE); //remove the key
 
       // process password
-      getThirdMessage(inputString, password);
+      getLastMessage(inputString, password);
+      //password[KEY_SIZE] = '\0';
+      //getThirdMessage(inputString, password);
+
+      //Serial.print(password);
+      //Serial.print("\n");
 
       if ( strlen(password) % KEY_SIZE == 0 ) {
         //corect size we can process it
@@ -81,6 +104,8 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
         sendBluetoothRequest(serial, message);
         sendBluetoothRequest(serial, encryptedPassword, strlen(password));
         serial->println("");
+
+        //debug (encryptedPassword, strlen(password));
       } else {
         Serial.print("1:Fail\n"); //remove hardcoded part
       }
@@ -90,14 +115,15 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
       // retrive entry
 
       // process key
-      memset(key, 0, KEY_SIZE);
-      getLastMessage(inputString, key);
+      //memset(key, 0, KEY_SIZE);
+      //getLastMessage(inputString, key);
 
       // generate request
-      generateBluetoothRetriveMessage(inputString, retrieveEntryMessage);
+      //generateBluetoothRetriveMessage(inputString, retrieveEntryMessage);
 
       // send message
-      sendBluetoothRequest(serial, retrieveEntryMessage);
+      //sendBluetoothRequest(serial, retrieveEntryMessage);
+      sendBluetoothRequest(serial, inputString);
       break;
     case 3:
       // delete entry - no need to process, send directly to phone
@@ -111,7 +137,7 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
       // close bluetooth the connection - no need to process, send directly to phone
       sendBluetoothRequest(serial, inputString);
     default:
-      memset(key, 0, KEY_SIZE);
+      //memset(key, 0, KEY_SIZE);
       // error, so ignore data
       break;   
   }
@@ -142,16 +168,20 @@ void bluetoothProcessReply(char *inputString)
 
       // process key - as putea sa tin in memorie expansionkey-ul asa ar fi mai greu de procesat
       keyExpansion(key, expansionKey);
-      memset(key, 0, KEY_SIZE);
+      //memset(key, 0, KEY_SIZE);
 
       // process password
       getLastMessage(inputString, encryptedPassword);
+      // for an unknown reason read one more char so I have to remove it
+      encryptedPassword[ KEY_SIZE * (strlen(encryptedPassword) / KEY_SIZE)] = '\0';
       generateShortPassword(encryptedPassword, shortEncryptedPassword);
 
-      if ( strlen(shortEncryptedPassword) % KEY_SIZE == 0 ) {
-
+      //debug(shortEncryptedPassword, strlen(shortEncryptedPassword));
+      //debug(key, strlen(key) );
+      if ( strlen(encryptedPassword) % ( KEY_SIZE * 2 ) == 0 ) {
+        
         // decrypt message
-        int steps = strlen(shortEncryptedPassword) / KEY_SIZE;
+        int steps = strlen(encryptedPassword) / (KEY_SIZE * 2);
         int contor = 0;
         while( contor < steps ) {
           invCipher(&shortEncryptedPassword[contor * KEY_SIZE], expansionKey, &password[contor * KEY_SIZE]);
