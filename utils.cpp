@@ -26,16 +26,6 @@ int getTypeCommand(const char* message) {
   return type;
 }
 
-bool getThirdMessage(const char* input, char* result) {
-  const char* p1 = getNOccurrence(input, 3, SPLITTER);
-  const char* p2 = getNOccurrence(input, 4, SPLITTER);
-  if ( (p1 == 0) || (p2 == 0) ) {
-    return false;
-  }
-  strncpy(result, p1+1, p2-p1-1);
-  return true;
-}
-
 bool getLastMessage(const char* input, char* result) {
   const char* p1 = strrchr(input, SPLITTER);
   const char* p2 = strrchr(input, END_COMMAND);

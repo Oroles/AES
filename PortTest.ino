@@ -4,16 +4,16 @@
 #include "aes.h"
 #include "utils.h"
 
-static const int MESSAGE_SIZE = 100;
+static const byte MESSAGE_SIZE = 100;
 
 // buffer for serial communication
 char inputSerial[MESSAGE_SIZE];
-unsigned int sizeInputSerial = 0;
+unsigned char sizeInputSerial = 0;
 boolean serialComplete = false;
 
 // buffer for bluetooth communication
 char inputBluetooth[MESSAGE_SIZE];
-unsigned int sizeInputBluetooth = 0;
+unsigned char sizeInputBluetooth = 0;
 boolean bluetoothComplete = false;
 
 // interface to bluetooth
