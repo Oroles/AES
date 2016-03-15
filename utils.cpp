@@ -59,6 +59,13 @@ void generateSerialRetriveMessage(const char* input, const char* password, char*
   message[4 + strlen(password)] = '\n';
 }
 
+void generateSerialRetriveMessage(const char* password, char* message)
+{
+  const char *p = strchr(password, PADDING);
+  strncpy(message, password, p - password);
+  message[p-password] = '\0';
+}
+
 unsigned char convertToHex( char data ) {
   switch (data)
   {

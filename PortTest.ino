@@ -16,6 +16,8 @@ char inputBluetooth[MESSAGE_SIZE];
 unsigned char sizeInputBluetooth = 0;
 boolean bluetoothComplete = false;
 
+const int BUTTON_PIN = 2;
+
 // interface to bluetooth
 SoftwareSerial* bluetoothSerial = new SoftwareSerial(10, 11);
 
@@ -94,6 +96,7 @@ void bluetoothEvent() {
 void setup() {
   Serial.begin(9600);
   bluetoothSerial->begin(9600);
+  pinMode(BUTTON_PIN, INPUT);
   readKey();
 }
 
@@ -102,4 +105,5 @@ void loop() {
    receiveBluetoothMessage();
    serialEvent();
    bluetoothEvent();
+   sendPasswordAsKeyboard(digitalRead(BUTTON_PIN));
 }
