@@ -36,8 +36,7 @@ bool getLastMessage(const char* input, char* result) {
   return true;
 }
 
-void generateBluetoothAddMessage(const char* input, char* message)
-{
+void generateBluetoothAddMessage(const char* input, char* message) {
   // get the 3rd occurence of ':'
   const char* p = getNOccurrence(input, 3, SPLITTER);
   
@@ -45,25 +44,22 @@ void generateBluetoothAddMessage(const char* input, char* message)
   strncpy(message, input, sizeData + 1); //copies the code, website and username in message
 }
 
-void generateBluetoothRetriveMessage(const char* input, char *message)
-{
-  const char *p = strrchr(input,SPLITTER);
-  strncpy(message, input, p-input);
-  message[p-input] = END_COMMAND;
-}
-
-void generateSerialRetriveMessage(const char* input, const char* password, char* message)
-{
-  strncpy(message, input, 4); //will copy "2:status:"
-  strncpy(&message[4], password, strlen(password));
-  message[4 + strlen(password)] = '\n';
-}
-
-void generateSerialRetriveMessage(const char* password, char* message)
-{
+void generateSerialRetriveMessage(const char* password, char* message) {
   const char *p = strchr(password, PADDING);
   strncpy(message, password, p - password);
   message[p-password] = '\0';
+}
+
+void generateBluetoothRetrieveHash(const char* hash, int l, char* message) {
+  //strncpy(message, "6\r", 2); //will copy "6:"
+  message[0] = '6';
+  message[1] = SPLITTER;
+  strncpy(&message[2], hash, l);
+  message[2 + l] = '\n';
+}
+
+void generateSerialClose(char* message) {
+  strncpy(message, "5\n", 2);
 }
 
 unsigned char convertToHex( char data ) {

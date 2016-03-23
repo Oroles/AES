@@ -3,10 +3,8 @@
 
 #include <SoftwareSerial.h>
 
-/*void sendSerialReply(char *message);*/
-void serialProcessRequest(SoftwareSerial* serial, char* message);
-/*void sendBluetoothRequest(SoftwareSerial* serial, char* command);*/
-void bluetoothProcessReply(char *command);
+void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* message);
+void bluetoothProcessReply(SoftwareSerial* bluetootSerial, char *command);
 void readKey();
 void sendPasswordAsKeyboard(int buttonStatus);
 

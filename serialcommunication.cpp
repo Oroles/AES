@@ -6,16 +6,31 @@
 #include "Keyboard.h"
 
 static const byte KEY_SIZE = 16;
+static const byte HASH_SIZE = 32;
 static const byte PASSWORD_SIZE = 100;
 static const byte MESSAGE_SIZE = 200;
-static const int START_PASSWORD = 900;
+static const int START_KEY = 900;
+static const int START_HASH = 950;
 
 static char key[KEY_SIZE];
 
 void readKey() {
   for ( int i = 0; i < KEY_SIZE; ++i ) {
-    /*key[i] = ( i % 8 ) + '0';*/
-    key[i] = EEPROM.read(i + START_PASSWORD);
+    //key[i] = ( i % 8 ) + '0';
+    key[i] = EEPROM.read(i + START_KEY);
+  }
+}
+
+void readHash(char* hash) {
+  for( int i = 0; i < HASH_SIZE; ++i ) {
+    hash[i] = EEPROM.read(i + START_HASH);
+    //hash[i] = ( i % 8 ) + '0';
+  }
+}
+
+void writeHash(char* hash) {
+  for ( int i = 0; i < HASH_SIZE; ++i ) {
+    EEPROM.write(i + START_HASH, hash[i]);
   }
 }
 
@@ -45,15 +60,15 @@ void sendPasswordAsKeyboard(int buttonStatus)
   lastButtonStatus = buttonStatus;
 }
 
-void sendSerialReply(char *message)
+void sendToSerial(char *message)
 {
   int i = 0;
   while(message[i] != '\0') {
-    Serial.write(message[i++]);
+    Serial.print(message[i++]);
   }
 }
 
-void sendBluetoothRequest(SoftwareSerial* serial, char* message)
+void sendToBluetooth(SoftwareSerial* serial, char* message)
 {
   int i = 0;
   while( message[i] != '\0' ) {
@@ -61,7 +76,7 @@ void sendBluetoothRequest(SoftwareSerial* serial, char* message)
   }
 }
 
-void sendBluetoothRequest(SoftwareSerial* serial, char *message, int l)
+void sendToBluetoothHEX(SoftwareSerial* serial, char *message, int l)
 {
   int i =0;
   for(i=0; i<l; ++i) {
@@ -72,19 +87,7 @@ void sendBluetoothRequest(SoftwareSerial* serial, char *message, int l)
   }
 }
 
-/*void debug(char *message, int l)
-{
-  int i =0;
-  for(i=0; i<l; ++i) {
-    if ((unsigned char) message[i] < 0x10 ) {
-      Serial.print(0x00, HEX);
-    }
-    Serial.print((unsigned char)message[i], HEX);
-  }
-  Serial.print("\n");
-}*/
-
-void serialProcessRequest(SoftwareSerial* serial, char* inputString)
+void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
 {
   char password[PASSWORD_SIZE];
   char encryptedPassword[PASSWORD_SIZE]; //ecrypted password will be on 16 bytes
@@ -122,9 +125,9 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
         generateBluetoothAddMessage(inputString, message);
       
         //send message
-        sendBluetoothRequest(serial, message);
-        sendBluetoothRequest(serial, encryptedPassword, strlen(password));
-        serial->println("");
+        sendToBluetooth(bluetoothSerial, message);
+        sendToBluetoothHEX(bluetoothSerial, encryptedPassword, strlen(password));
+        bluetoothSerial->print("\n");
 
       } else {
         Serial.print(F("1:Fail\n")); //remove hardcoded part
@@ -133,25 +136,25 @@ void serialProcessRequest(SoftwareSerial* serial, char* inputString)
       break;
     case 2:
       // retrive entry
-      sendBluetoothRequest(serial, inputString);
+      sendToBluetooth(bluetoothSerial, inputString);
       break;
     case 3:
       // delete entry - no need to process, send directly to phone
-      sendBluetoothRequest(serial, inputString);
+      sendToBluetooth(bluetoothSerial, inputString);
       break;
     case 4:
       // obtain websites - no need to process, send directly to phone
-      sendBluetoothRequest(serial, inputString);
+      sendToBluetooth(bluetoothSerial, inputString);
       break;
     case 5:
       // close bluetooth the connection - no need to process, send directly to phone
-      sendBluetoothRequest(serial, inputString);
+      sendToBluetooth(bluetoothSerial, inputString);
     default:
       break;   
   }
 }
 
-void bluetoothProcessReply(char *inputString)
+void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
 {
   char encryptedPassword[2 * PASSWORD_SIZE];
   char shortEncryptedPassword[PASSWORD_SIZE];
@@ -163,32 +166,30 @@ void bluetoothProcessReply(char *inputString)
   memset(password, 0, PASSWORD_SIZE);
   memset(message, 0, MESSAGE_SIZE);
 
-  unsigned long expansionKey[44];
-  memset(expansionKey, 0, 44 * 4);
+  /*unsigned long expansionKey[44];
+  memset(expansionKey, 0, 44 * 4);*/
   
   int typeCommand = getTypeCommand(inputString);
   switch (typeCommand)
   {
     case 1:
-      // add new entry - ne need to process, send directly to serial
-      // the message should be Ok or Fail
-      sendSerialReply(inputString);
+      {// add new entry
+        sendToSerial(inputString);
+      }
       break;
     case 2:
       // retrive entry
 
-      // process key
-      keyExpansion(key, expansionKey);
-
-      // process password
+      //keyExpansion(key, expansionKey);
       getLastMessage(inputString, encryptedPassword);
-      // for an unknown reason read one more char so I have to remove it
-      encryptedPassword[ KEY_SIZE * (strlen(encryptedPassword) / KEY_SIZE)] = '\0';
+      //encryptedPassword[ KEY_SIZE * (strlen(encryptedPassword) / KEY_SIZE)] = '\0'; //this comes from the fact,that when I send the password on phone it ends with \r\n
       generateShortPassword(encryptedPassword, shortEncryptedPassword);
 
       if ( strlen(encryptedPassword) % ( KEY_SIZE * 2 ) == 0 ) {
+        unsigned long expansionKey[44];
+        memset(expansionKey, 0, 44 * 4);
+        keyExpansion(key, expansionKey);
         
-        // decrypt message
         int steps = strlen(encryptedPassword) / (KEY_SIZE * 2);
         int contor = 0;
         while( contor < steps ) {
@@ -196,26 +197,38 @@ void bluetoothProcessReply(char *inputString)
           ++contor;
         }
 
-        //generateSerialRetriveMessage(inputString, password, message);
-        //storeInBuffer(message);
         generateSerialRetriveMessage(password, message);
         storeInBuffer(message);
-      } else {
-        Serial.print(F("2:0:Fail\n")); //remove hardcoded part
       }
-
       break;
     case 3:
-      // delete entry - no need to process, send directly to serial
-      sendSerialReply(inputString);
+      { // delete entry
+        sendToSerial(inputString);
+      }
       break;
     case 4:
-      // obtain websites - no need to process, send directly to serial
-      sendSerialReply(inputString);
+      { // obtain websites
+        sendToSerial(inputString);
+      }
       break;
     case 5:
-      // close serial connection
-      sendSerialReply(inputString);
+      { // get from message and store the hash value and close connection
+        char hash[HASH_SIZE]; //input = "5:hash_value\n
+        memset(hash, '\0', HASH_SIZE);
+        getLastMessage(inputString, hash);
+        writeHash(hash);
+        generateSerialClose(message); //message = "5\n"
+        sendToSerial(message);
+      }
+      break;
+    case 6:
+      { //read hash from EERPOM and send back to bluetooth
+        char hash[HASH_SIZE]; //input = 6:\n
+        memset(hash, '\0', HASH_SIZE);
+        readHash(hash);
+        generateBluetoothRetrieveHash(hash, HASH_SIZE, message); //message = 6:hash_value\n
+        sendToBluetooth(bluetoothSerial, message);
+      }
       break;
     default:
       // error, so ignore data

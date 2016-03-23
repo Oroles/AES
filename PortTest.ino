@@ -39,7 +39,7 @@ void receiveSerialMessage()
 void receiveBluetoothMessage()
 {
   if (bluetoothComplete) {
-    bluetoothProcessReply(inputBluetooth);
+    bluetoothProcessReply(bluetoothSerial, inputBluetooth);
     //Serial.write(inputBluetooth);
     
     // clear data
