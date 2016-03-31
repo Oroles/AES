@@ -1,4 +1,9 @@
+#ifndef _AES_H_
+#define _AES_H_
 
-void cipher(char in[16], unsigned long w[44], char *out);
-void invCipher(char in[16], unsigned long w[44], char *out);
-void keyExpansion(char key[16], unsigned long w[44] );
+#include <Arduino.h>
+
+bool encryptPassword(char* password, char *key, byte KEY_SIZE, char* encryptedPassword);
+bool decryptPassword(char* encryptedPassword, char *key, byte KEY_SIZE, char* password);
+
+#endif

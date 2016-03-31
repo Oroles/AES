@@ -296,3 +296,39 @@ void keyExpansion(char key[16], unsigned long w[44]) {
 	}
 }
 
+bool encryptPassword(char* password, char* key, byte KEY_SIZE, char* encryptedPassword) {
+
+  if( strlen(password) % KEY_SIZE == 0 ) {
+    unsigned long expansionKey[44];
+    memset(expansionKey, 0, 44 * sizeof(unsigned long));
+    keyExpansion(key, expansionKey);
+
+    int steps = strlen(password) / KEY_SIZE;
+    int contor = 0;
+    while ( contor < steps ) {
+      cipher(&password[contor * KEY_SIZE], expansionKey, &encryptedPassword[contor * KEY_SIZE]);
+      ++contor;
+    }
+    return true;
+  }
+  return false;
+}
+
+bool decryptPassword(char* encryptedPassword, char *key, byte KEY_SIZE, char* password) {
+
+   if ( strlen(encryptedPassword) % KEY_SIZE == 0 ) {
+    unsigned long expansionKey[44];
+    memset(expansionKey, 0, 44 * sizeof(unsigned long));
+    keyExpansion(key, expansionKey);
+
+    int steps = strlen(encryptedPassword) / KEY_SIZE;
+    int contor = 0;
+    while( contor < steps ) {
+      invCipher(&encryptedPassword[contor * KEY_SIZE], expansionKey, &password[contor * KEY_SIZE]);
+      ++contor;
+    }
+    return true;
+   }
+   return false;
+}
+

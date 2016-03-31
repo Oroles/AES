@@ -1,9 +1,5 @@
 #include "utils.h"
-
-/*
-Make safe the strlen, is possible that the char* not to have a '\0' 
-therefore it will never find the end.
-*/
+#include <EEPROM.h>
 
 const char* getNOccurrence( const char* input, int n, const char c) {
   const char* p = input;

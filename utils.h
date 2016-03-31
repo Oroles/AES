@@ -15,5 +15,6 @@ void generateBluetoothRetrieveHash(const char* hash, int l, char* message);
 void generateSerialClose(char* message);
 
 bool getLastMessage(const char* input, char* result);
+const char* getNOccurrence( const char* input, int n, const char c);
 
 #endif
