@@ -106,5 +106,6 @@ void loop() {
    receiveBluetoothMessage();
    serialEvent();
    bluetoothEvent();
-   sendPasswordAsKeyboard(digitalRead(BUTTON_PIN));
+   //sendPasswordAsKeyboard(digitalRead(BUTTON_PIN));
+   sendDataFromBuffers(bluetoothSerial, digitalRead(BUTTON_PIN));
 }

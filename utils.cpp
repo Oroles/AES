@@ -32,33 +32,7 @@ bool getLastMessage(const char* input, char* result) {
   return true;
 }
 
-void generateBluetoothAddMessage(const char* input, char* message) {
-  // get the 3rd occurence of ':'
-  const char* p = getNOccurrence(input, 3, SPLITTER);
-  
-  int sizeData = p - input;
-  strncpy(message, input, sizeData + 1); //copies the code, website and username in message
-}
-
-void generateSerialRetriveMessage(const char* password, char* message) {
-  const char *p = strchr(password, PADDING);
-  strncpy(message, password, p - password);
-  message[p-password] = '\0';
-}
-
-void generateBluetoothRetrieveHash(const char* hash, int l, char* message) {
-  //strncpy(message, "6\r", 2); //will copy "6:"
-  message[0] = '6';
-  message[1] = SPLITTER;
-  strncpy(&message[2], hash, l);
-  message[2 + l] = '\n';
-}
-
-void generateSerialClose(char* message) {
-  strncpy(message, "5\n", 2);
-}
-
-unsigned char convertToHex( char data ) {
+unsigned char asciiToHex( char data ) {
   switch (data)
   {
     case '0': return 0x00;
@@ -87,13 +61,69 @@ unsigned char convertToHex( char data ) {
   }
 }
 
+char hexToAscii( char data ) {
+  switch (data)
+  {
+    case 0x00: return '0';
+    case 0x01: return '1';
+    case 0x02: return '2';
+    case 0x03: return '3';
+    case 0x04: return '4';
+    case 0x05: return '5';
+    case 0x06: return '6';
+    case 0x07: return '7';
+    case 0x08: return '8';
+    case 0x09: return '9';
+    case 0x0A: return 'A';
+    case 0x0B: return 'B';
+    case 0x0C: return 'C';
+    case 0x0D: return 'D';
+    case 0x0E: return 'E';
+    case 0x0F: return 'F';
+    default: return '0';  
+  }
+}
+
+void generateBluetoothAddMessage(const char* input, const char* password, int passwordLength, char* message) {
+  // get the 3rd occurence of ':'
+  const char* p = getNOccurrence(input, 3, SPLITTER);
+  
+  int sizeData = p - input;
+  strncpy(message, input, sizeData + 1); //copies the code, website and username in message
+  for ( int i = 0, j = 0; i < passwordLength; ++i, ++j ) {
+    char msb = hexToAscii((0xF0 & password[i]) >> 4 );
+    char lsb = hexToAscii(0x0F & password[i]);
+    message[2 * j + sizeData + 1] = msb;
+    message[2 * j + 1 + sizeData + 1] = lsb;
+  }
+  message[strlen(message)] = '\n';
+}
+
+void generateSerialRetriveMessage(const char* password, char* message) {
+  const char *p = strchr(password, PADDING);
+  strncpy(message, password, p - password);
+  message[p-password] = '\0';
+}
+
+void generateBluetoothRetrieveHash(const char* hash, int l, char* message) {
+  message[0] = '6';
+  message[1] = SPLITTER;
+  strncpy(&message[2], hash, l);
+  message[2 + l] = '\n';
+}
+
+void generateSerialClose(char* message) {
+  strncpy(message, "5\n", 2);
+}
+
+
 void generateShortPassword(const char* longPassword, char *password)
 {
   unsigned char i = 0;
   for( i = 0; i < strlen(longPassword); i+=2 )
   {
-    unsigned char MSB = convertToHex(longPassword[i]);
-    unsigned char LSB = convertToHex(longPassword[i+1]);
+    unsigned char MSB = asciiToHex(longPassword[i]);
+    unsigned char LSB = asciiToHex(longPassword[i+1]);
     password[i/2] = ( ( MSB << 4 ) | LSB );
   }
 }
