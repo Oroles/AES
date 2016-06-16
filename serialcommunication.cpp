@@ -68,18 +68,23 @@ void storeInDataBuffer( char * message )
   memcpy(dataBuffer, message, strlen(message) + 1);
 }
 
-static bool lastOperation = true;
+enum LastOperation{ Pc, Phone, None };
+
+static LastOperation lastOperation = None;
 static int lastButtonStatus = LOW;
 void sendDataFromBuffers(SoftwareSerial* bluetoothSerial, int buttonStatus)
 {
   if (buttonStatus != lastButtonStatus) {
      if (buttonStatus == HIGH) {
-       if (lastOperation) {
+       if (lastOperation == Pc) {
         sendToBluetooth(bluetoothSerial, dataBuffer);
        }
        else {
-        sendAsKeyboard(dataBuffer);
+        if (lastOperation == Phone) {
+         sendAsKeyboard(dataBuffer); 
+        }
        }
+       lastOperation = None;
        memcpy(dataBuffer, '\0', PASSWORD_SIZE);
      }
   }
@@ -105,7 +110,7 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
         getLastMessage(inputString, password);
         if (encryptPassword(password, key, KEY_SIZE, encryptedPassword)) {
           generateBluetoothAddMessage(inputString, encryptedPassword, strlen(password), message);
-          lastOperation = true;
+          lastOperation = Pc;
           storeInDataBuffer(message);
         } else {
           Serial.print(F("1:Fail\n"));
@@ -119,27 +124,32 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
       break;
     case 3:
       { // delete entry - no need to process, send directly to phone
-        lastOperation = true;
+        lastOperation = Pc;
         storeInDataBuffer(inputString);
       }
       break;
     case 4:
       { // obtain websites - no need to process, send directly to phone
-        lastOperation = true;
+        lastOperation = Pc;
         storeInDataBuffer(inputString);
       }
       break;
-    case 5:
+    /*case 5:
       { // close bluetooth the connection - no need to process, send directly to phone //maybe should be removed
         //sendToBluetooth(bluetoothSerial, inputString);
       }
-      break;
+      break;*/
+    case 5:
+      {
+        Serial.print(F("5\rCorrect Port\n"));
+        break;
+      }
     case 7:
       {
         if (generatePassword(inputString, password, KEY_SIZE)) {
           if (encryptPassword(password, key, KEY_SIZE, encryptedPassword)) {
             generateBluetoothAddMessage(inputString, encryptedPassword, strlen(password), message);
-            lastOperation = true;
+            lastOperation = Pc;
             storeInDataBuffer(message);
             Serial.print(F("7\rStored in Buffer\n"));
           } else {
@@ -182,7 +192,7 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
 
         if (decryptPassword(shortEncryptedPassword, key, KEY_SIZE, password)) {
           generateSerialRetriveMessage(password, message);
-          lastOperation = false;
+          lastOperation = Phone;
           storeInDataBuffer(message);       
         }
       }

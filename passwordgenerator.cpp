@@ -71,6 +71,74 @@ bool isValid(const char* password, const int l, const bool* types) {
   return true;
 }
 
+void obtainCounters(const bool* allow_types, int l, int *counterSymbols, int *counterNumbers, int *counterLetters)
+{
+  *counterSymbols = 0;
+  *counterNumbers = 0;
+  *counterLetters = 0;
+  
+  if (allow_types[SYMBOLS] == true && (allow_types[NUMBERS] == true || allow_types[LETTERS] == true)) {
+    *counterSymbols = Entropy.random(l - allow_types[NUMBERS] - allow_types[LETTERS]);
+  }
+  else {
+    if (allow_types[NUMBERS] == false && allow_types[LETTERS] == false) {
+        *counterSymbols = l;
+    }
+  }
+  
+  if (allow_types[NUMBERS] == true && allow_types[LETTERS] == true) {
+    *counterNumbers = Entropy.random(l - *counterSymbols - allow_types[LETTERS]);
+  }
+  else {
+    if (allow_types[LETTERS] == false) {
+      *counterNumbers = l - *counterSymbols;
+    }
+  }
+  
+  if (allow_types[LETTERS] == true) {
+    *counterLetters = l - *counterNumbers - *counterSymbols;
+  }
+}
+
+void randomShuffel(char *password, const int l) {
+  for (int i = l-1; i > 0; --i) {
+    int j = Entropy.random(0,i-1);
+    char tmp = password[j];
+    password[j] = password[i];
+    password[i] = tmp;
+  }
+  
+}
+
+void generatePasswordImpl2(const bool* allow_types, char* password, const int l) {
+  Entropy.initialize();
+  int counterSymbols = 0;
+  int counterNumbers = 0;
+  int counterLetters = 0;
+  obtainCounters(allow_types, l, &counterSymbols, &counterNumbers, &counterLetters);
+  int counter = 0;
+  for (int i = 0; i < counterSymbols; ++i) {
+    password[counter++] = symbols[(Entropy.random(SYMBOL_SIZE))];
+  }
+  for (int i = 0; i < counterNumbers; ++i) {
+    password[counter++] = Entropy.random(NUMBERS_LOWER, NUMBERS_UPPER);
+  }
+  for (int i = 0; i < counterLetters; ++i) {
+      if (Entropy.random(2) == 0) {
+        password[counter++] = Entropy.random(SMALL_LETTERS_LOWER, SMALL_LETTERS_UPPER);
+      }
+      else {
+        password[counter++] = Entropy.random(CAPITAL_LETTERS_LOWER, CAPITAL_LETTERS_UPPER);
+      }
+  }
+  if ( (allow_types[SYMBOLS] == true && allow_types[NUMBERS] == true) ||
+       (allow_types[SYMBOLS] == true && allow_types[LETTERS] == true) ||
+       (allow_types[LETTERS] == true && allow_types[NUMBERS] == true) ) {
+    randomShuffel(password, l);
+  }
+  
+}
+
 void generatePasswordImpl(const bool* allow_types, char* password, const int l) {
   Entropy.initialize();
   int counter = 0;
