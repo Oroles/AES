@@ -134,11 +134,6 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
         storeInDataBuffer(inputString);
       }
       break;
-    /*case 5:
-      { // close bluetooth the connection - no need to process, send directly to phone //maybe should be removed
-        //sendToBluetooth(bluetoothSerial, inputString);
-      }
-      break;*/
     case 5:
       {
         Serial.print(F("5\rCorrect Port\n"));
@@ -159,6 +154,10 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
           Serial.print(F("7\rFail\n"));
        }
         break;
+      }
+    case 8:
+      {
+        Serial.print(F("8\rConnected\n"));
       }
     default:
       break;   
@@ -205,6 +204,7 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
     case 4:
       { // obtain websites
         sendToSerial(inputString);
+
       }
       break;
     case 5:
@@ -224,6 +224,10 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
         sendToBluetooth(bluetoothSerial, message);
       }
       break;
+    case 9:
+      {
+        sendToBluetooth(bluetoothSeria, "9\n");
+      }
     default:
       // error, so ignore data
       break;   
