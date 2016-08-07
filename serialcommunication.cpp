@@ -17,7 +17,6 @@ static char key[KEY_SIZE];
 
 void readKey() {
   for ( int i = 0; i < KEY_SIZE; ++i ) {
-    //key[i] = ( i % 8 ) + '0';
     key[i] = EEPROM.read(i + START_KEY);
   }
 }
@@ -25,7 +24,6 @@ void readKey() {
 void readHash(char* hash) {
   for( int i = 0; i < HASH_SIZE; ++i ) {
     hash[i] = EEPROM.read(i + START_HASH);
-    //hash[i] = ( i % 8 ) + '0';
   }
 }
 
@@ -204,7 +202,6 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
     case 4:
       { // obtain websites
         sendToSerial(inputString);
-
       }
       break;
     case 5:
@@ -224,9 +221,15 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
         sendToBluetooth(bluetoothSerial, message);
       }
       break;
+    case 7:
+      {
+        sendToSerial(inputString);
+      }
+      break;
     case 9:
       {
-        sendToBluetooth(bluetoothSeria, "9\n");
+        sendToBluetooth(bluetoothSerial, "9\n");
+        break;
       }
     default:
       // error, so ignore data

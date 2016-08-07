@@ -166,7 +166,7 @@ void generatePasswordImpl(const bool* allow_types, char* password, const int l) 
 
 void generatePassword(const bool *allow_types, char *password, const int l) {
   do {
-    generatePasswordImpl(allow_types, password, l);
+    generatePasswordImpl2(allow_types, password, l);
   } while(!isValid(password, l, allow_types ));
 }
 
