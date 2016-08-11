@@ -4,8 +4,11 @@
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
 
-static const int S_INV_START_EEPROM = 512;
+#define Nb 4
+#define Nk 8
+#define Nr 14
 
+static const int S_INV_START_EEPROM = 512;
 
 /*const unsigned char s[256] = 
 {
@@ -48,262 +51,266 @@ const unsigned char inv_s[256] =
 };*/
 
 
-void addRoundKey(char (*in)[4][4], unsigned long *w, unsigned char round) {
-	unsigned char l = round * 4;
-	int j = 0;
-	for(j=0; j<4; ++j) {
-		//trebuie schimbate and-urile pentru big endian
-		char s0 = (*in)[0][j] ^ ((w[l+j] & 0xFF000000) >> 24);
-		char s1 = (*in)[1][j] ^ ((w[l+j] & 0x00FF0000) >> 16);
-		char s2 = (*in)[2][j] ^ ((w[l+j] & 0x0000FF00) >> 8);
-		char s3 = (*in)[3][j] ^ ((w[l+j] & 0x000000FF) >> 0);
-		(*in)[0][j] = s0;
-		(*in)[1][j] = s1;
-		(*in)[2][j] = s2;
-		(*in)[3][j] = s3;
-	}
-	return;
+void addRoundKey(unsigned char (*in)[4][Nb],const unsigned long *w, const unsigned char round) {
+  unsigned char l = round * Nb;
+  int j = 0;
+  for(j=0; j<Nb; ++j) {
+    //Needs to change for the big endian
+    char s0 = (*in)[0][j] ^ ((w[l+j] & 0xFF000000) >> 24);
+    char s1 = (*in)[1][j] ^ ((w[l+j] & 0x00FF0000) >> 16);
+    char s2 = (*in)[2][j] ^ ((w[l+j] & 0x0000FF00) >> 8);
+    char s3 = (*in)[3][j] ^ ((w[l+j] & 0x000000FF) >> 0);
+    (*in)[0][j] = s0;
+    (*in)[1][j] = s1;
+    (*in)[2][j] = s2;
+    (*in)[3][j] = s3;
+  }
+  return;
 }
 
-void subBytes(char (*in)[4][4]) {
-	unsigned i = 0;
-	for(i=0; i < 4; ++i) {
-		unsigned j = 0;
-		for(j=0; j < 4; ++j) {
-			(*in)[i][j] = EEPROM.read( (unsigned char)(*in)[i][j] );
-		}
-	}
+void subBytes(unsigned char (*in)[4][Nb]) {
+  unsigned i = 0;
+  for(i=0; i < 4; ++i) {
+    unsigned j = 0;
+    for(j=0; j < Nb; ++j) {
+      (*in)[i][j] = EEPROM.read( (unsigned char)(*in)[i][j] );
+    }
+  }
 }
 
-void invSubBytes(char (*in)[4][4]) {
-	unsigned char i = 0;
-	for(i=0; i<4; ++i) {
-		unsigned char j = 0;
-		for(j=0; j<4; ++j) {
-			(*in)[i][j] = EEPROM.read( (unsigned char)(*in)[i][j] + S_INV_START_EEPROM );
-		}
-	}
+void invSubBytes(unsigned char (*in)[4][Nb]) {
+  unsigned char i = 0;
+  for(i=0; i<4; ++i) {
+    unsigned char j = 0;
+    for(j=0; j<Nb; ++j) {
+      (*in)[i][j] = EEPROM.read( (unsigned char)(*in)[i][j] + S_INV_START_EEPROM );
+    }
+  }
 }
 
-void shiftRow(char (*in)[4][4], unsigned char row, unsigned char count) {
-	unsigned char i = 0;
-	for(i=0; i<count; ++i) {
-		unsigned char j = 0;
-		for(j=0; j<4-1; ++j) {
-			unsigned char aux = (*in)[row][j];
-			(*in)[row][j] = (*in)[row][j+1];
-			(*in)[row][j+1] = aux;
-		}
-	}
+void shiftRow(unsigned char (*in)[4][Nb],const unsigned char row, const unsigned char count) {
+  unsigned char i = 0;
+  for(i=0; i<count; ++i) {
+    unsigned char j = 0;
+    for(j=0; j<Nb-1; ++j) {
+      unsigned char aux = (*in)[row][j];
+      (*in)[row][j] = (*in)[row][j+1];
+      (*in)[row][j+1] = aux;
+    }
+  }
 }
 
-void invShiftRow(char (*in)[4][4], unsigned char row, unsigned char count) {
-	unsigned char i = 0;
-	for(i=0; i<count; ++i) {
-		unsigned char j = 0;
-		for(j=4-1; j>0; --j) {
-			char aux = (*in)[row][j];
-			(*in)[row][j] = (*in)[row][j-1];
-			(*in)[row][j-1] = aux; 
-		}
-	}
+void invShiftRow(unsigned char (*in)[4][Nb],const  unsigned char row, const unsigned char count) {
+  unsigned char i = 0;
+  for(i=0; i<count; ++i) {
+    unsigned char j = 0;
+    for(j=Nb-1; j>0; --j) {
+      char aux = (*in)[row][j];
+      (*in)[row][j] = (*in)[row][j-1];
+      (*in)[row][j-1] = aux; 
+    }
+  }
 }
 
-void shiftRows(char (*in)[4][4]) {
-	shiftRow(in, 1, 1);
-	shiftRow(in, 2, 2);
-	shiftRow(in, 3, 3);
+void shiftRows(unsigned char (*in)[4][Nb]) {
+  shiftRow(in, 1, 1);
+  shiftRow(in, 2, 2);
+  shiftRow(in, 3, 3);
 }
 
-void invShiftRows(char (*in)[4][4]) {
-	invShiftRow(in, 1, 1);
-	invShiftRow(in, 2, 2);
-	invShiftRow(in, 3, 3);
+void invShiftRows(unsigned char (*in)[4][Nb]) {
+  invShiftRow(in, 1, 1);
+  invShiftRow(in, 2, 2);
+  invShiftRow(in, 3, 3);
 }
 
 unsigned char xtime( char val ) {
-	unsigned char needsXOR = ( ( val & 0x80 ) != 0 );
-	if ( needsXOR ) return ( val << 1 ^ 0x1B );
-	else return val << 1;
+  unsigned char needsXOR = ( ( val & 0x80 ) != 0 );
+  if ( needsXOR ) return ( val << 1 ^ 0x1B );
+  else return val << 1;
 }
 
 unsigned char xtimes( unsigned char val, unsigned char times ) {
-	switch( times ) {
-		case 0x01: return val;
-		case 0x02: return xtime(val);
-		case 0x03: return val ^ xtime(val);
-		case 0x09: return val ^ xtime(xtime(xtime(val)));
-		case 0x0b: return xtime(xtime(xtime(val))) ^ xtime(val) ^ val;
-		case 0x0d: return xtime(xtime(xtime(val))) ^ xtime(xtime(val)) ^ val;
-		case 0x0e: return xtime(xtime(xtime(val))) ^ xtime(xtime(val)) ^ xtime(val);
-		case 0x13: return val ^ xtime(val) ^ xtime(xtime(xtime(xtime(val))));
-	}
-	return 0;	
+  switch( times ) {
+    case 0x01: return val;
+    case 0x02: return xtime(val);
+    case 0x03: return val ^ xtime(val);
+    case 0x09: return val ^ xtime(xtime(xtime(val)));
+    case 0x0b: return xtime(xtime(xtime(val))) ^ xtime(val) ^ val;
+    case 0x0d: return xtime(xtime(xtime(val))) ^ xtime(xtime(val)) ^ val;
+    case 0x0e: return xtime(xtime(xtime(val))) ^ xtime(xtime(val)) ^ xtime(val);
+    case 0x13: return val ^ xtime(val) ^ xtime(xtime(xtime(xtime(val))));
+  }
+  return 0; 
 }
 
-void mixColumns(char (*in)[4][4]) {
-	unsigned char j = 0;
-	for(j=0; j<4; ++j) {
-		char s0 = xtimes((*in)[0][j], 2) ^ xtimes((*in)[1][j], 3) ^ xtimes((*in)[2][j], 1) ^ xtimes((*in)[3][j], 1);
-	        char s1 = xtimes((*in)[0][j], 1) ^ xtimes((*in)[1][j], 2) ^ xtimes((*in)[2][j], 3) ^ xtimes((*in)[3][j], 1);
-		char s2 = xtimes((*in)[0][j], 1) ^ xtimes((*in)[1][j], 1) ^ xtimes((*in)[2][j], 2) ^ xtimes((*in)[3][j], 3);
-		char s3 = xtimes((*in)[0][j], 3) ^ xtimes((*in)[1][j], 1) ^ xtimes((*in)[2][j], 1) ^ xtimes((*in)[3][j], 2);
-		(*in)[0][j] = s0;
-		(*in)[1][j] = s1;
-		(*in)[2][j] = s2;
-		(*in)[3][j] = s3;
-	}
+void mixColumns(unsigned char (*in)[4][Nb]) {
+  unsigned char j = 0;
+  for(j=0; j<Nb; ++j) {
+    char s0 = xtimes((*in)[0][j], 2) ^ xtimes((*in)[1][j], 3) ^ xtimes((*in)[2][j], 1) ^ xtimes((*in)[3][j], 1);
+    char s1 = xtimes((*in)[0][j], 1) ^ xtimes((*in)[1][j], 2) ^ xtimes((*in)[2][j], 3) ^ xtimes((*in)[3][j], 1);
+    char s2 = xtimes((*in)[0][j], 1) ^ xtimes((*in)[1][j], 1) ^ xtimes((*in)[2][j], 2) ^ xtimes((*in)[3][j], 3);
+    char s3 = xtimes((*in)[0][j], 3) ^ xtimes((*in)[1][j], 1) ^ xtimes((*in)[2][j], 1) ^ xtimes((*in)[3][j], 2);
+    (*in)[0][j] = s0;
+    (*in)[1][j] = s1;
+    (*in)[2][j] = s2;
+    (*in)[3][j] = s3;
+  }
 }
 
-void invMixColumns(char (*in)[4][4]) {
-	unsigned char j = 0;
-	for(j=0; j<4; ++j) {
-		char s0 = xtimes((*in)[0][j], 0x0e) ^ xtimes((*in)[1][j], 0x0b) ^ xtimes((*in)[2][j], 0x0d) ^ xtimes((*in)[3][j], 0x09);
-	  char s1 = xtimes((*in)[0][j], 0x09) ^ xtimes((*in)[1][j], 0x0e) ^ xtimes((*in)[2][j], 0x0b) ^ xtimes((*in)[3][j], 0x0d);
-		char s2 = xtimes((*in)[0][j], 0x0d) ^ xtimes((*in)[1][j], 0x09) ^ xtimes((*in)[2][j], 0x0e) ^ xtimes((*in)[3][j], 0x0b);
-		char s3 = xtimes((*in)[0][j], 0x0b) ^ xtimes((*in)[1][j], 0x0d) ^ xtimes((*in)[2][j], 0x09) ^ xtimes((*in)[3][j], 0x0e);
-		(*in)[0][j] = s0;
-		(*in)[1][j] = s1;
-		(*in)[2][j] = s2;
-		(*in)[3][j] = s3;
-	}
+void invMixColumns(unsigned char (*in)[4][Nb]) {
+  unsigned char j = 0;
+  for(j=0; j<Nb; ++j) {
+    char s0 = xtimes((*in)[0][j], 0x0e) ^ xtimes((*in)[1][j], 0x0b) ^ xtimes((*in)[2][j], 0x0d) ^ xtimes((*in)[3][j], 0x09);
+    char s1 = xtimes((*in)[0][j], 0x09) ^ xtimes((*in)[1][j], 0x0e) ^ xtimes((*in)[2][j], 0x0b) ^ xtimes((*in)[3][j], 0x0d);
+    char s2 = xtimes((*in)[0][j], 0x0d) ^ xtimes((*in)[1][j], 0x09) ^ xtimes((*in)[2][j], 0x0e) ^ xtimes((*in)[3][j], 0x0b);
+    char s3 = xtimes((*in)[0][j], 0x0b) ^ xtimes((*in)[1][j], 0x0d) ^ xtimes((*in)[2][j], 0x09) ^ xtimes((*in)[3][j], 0x0e);
+    (*in)[0][j] = s0;
+    (*in)[1][j] = s1;
+    (*in)[2][j] = s2;
+    (*in)[3][j] = s3;
+  }
 }
 
-void cipher(char in[16], unsigned long w[44], char *out) {
-	char state[4][4];
+void cipher(const unsigned char in[4 * Nb],const unsigned long w[Nb * (Nr+1)], unsigned char *out) {
+  unsigned char state[4][Nb];
 
-	// initialize the state
-	unsigned char i;
-	for(i=0; i<4; ++i) {
-		unsigned char j;
-		for(j=0; j< 4; ++j) {
-			state[j][i] = in[4*i + j];
-		}
-	}
+  // initialize the state
+  unsigned char i;
+  for(i=0; i<4; ++i) {
+    unsigned char j;
+    for(j=0; j< Nb; ++j) {
+      state[j][i] = in[4*i + j];
+    }
+  }
 
-	//add first round key
-	addRoundKey(&state, w, 0);
-	
-	//repet the process Nr-1 times
-	for(i=1; i<10; ++i) {
-		subBytes(&state);
-		shiftRows(&state);
-		mixColumns(&state);
-		addRoundKey(&state, w, (unsigned char)i);
-	}
+  //add first round key
+  addRoundKey(&state, w, 0);
+  
+  //repet the process Nr-1 times
+  for(i=1; i<Nr; ++i) {
+    subBytes(&state);
+    shiftRows(&state);
+    mixColumns(&state);
+    addRoundKey(&state, w, (unsigned char)i);
+  }
 
-	// last iteration
-	subBytes(&state);
-	shiftRows(&state);
-	addRoundKey(&state, w, (unsigned char)10);
+  // last iteration
+  subBytes(&state);
+  shiftRows(&state);
+  addRoundKey(&state, w, (unsigned char)Nr);
 
-	// return result
-	for(i = 0; i < 4; ++i) {
-		int j;
-		for(j=0; j < 4; ++j) {
-			out[4*j+i] = state[i][j];
-		}
-	}
+  // return result
+  for(i = 0; i < 4; ++i) {
+    int j;
+    for(j=0; j < Nb; ++j) {
+      out[4*j+i] = state[i][j];
+    }
+  }
 }
 
-void invCipher(char in[16], unsigned long w[44], char *out) {
-	char state[4][4];
+void invCipher(const unsigned char in[4 * Nb],const unsigned long w[Nb * (Nr+1)], unsigned char *out) {
+  unsigned char state[4][4];
 
-        unsigned char i = 0;
-        for(i=0; i<4; ++i) {
-                int j = 0;
-                for(j=0; j<4; ++j) {
-                        state[j][i] = in[4*i+j];
-                }
-        }
+  unsigned char i = 0;
+  for(i=0; i<4; ++i) {
+          int j = 0;
+          for(j=0; j<Nb; ++j) {
+                  state[j][i] = in[4*i+j];
+          }
+  }
 
-        addRoundKey(&state, w, (unsigned char)(10));
-        for(i=10-1; i > 0; --i) {
-                invShiftRows(&state);
-                invSubBytes(&state);
-                addRoundKey(&state, w, (unsigned char)(i));
-                invMixColumns(&state);
-        }
+  addRoundKey(&state, w, (unsigned char)(Nr));
+  for(i=Nr-1; i > 0; --i) {
+          invShiftRows(&state);
+          invSubBytes(&state);
+          addRoundKey(&state, w, (unsigned char)(i));
+          invMixColumns(&state);
+  }
 
-        invShiftRows(&state);
-        invSubBytes(&state);
-        addRoundKey(&state, w, 0);
+  invShiftRows(&state);
+  invSubBytes(&state);
+  addRoundKey(&state, w, 0);
 
-        for(i=0; i<4; ++i) {
-                unsigned char j=0;
-                for(j=0; j < 4; ++j) {
-                        out[4*i+j] = state[j][i];
-                }
-        }
+  for(i=0; i<4; ++i) {
+          unsigned char j=0;
+          for(j=0; j < Nb; ++j) {
+                  out[4*i+j] = state[j][i];
+          }
+  }
 }
 
 unsigned long SubWord(unsigned long word) {
-	unsigned char byte3 = 0x000000ff & word;
-	unsigned char byte2 = ((0x0000ff00 & word) >> 8);
-	unsigned char byte1 = ((0x00ff0000 & word) >> 16);
-	unsigned char byte0 = ((0xff000000 & word) >> 24);
-	byte3 = EEPROM.read(byte3);
-	byte2 = EEPROM.read(byte2);
-	byte1 = EEPROM.read(byte1);
-	byte0 = EEPROM.read(byte0);
-	unsigned long rez = ( 
-				((unsigned long)byte0 << 24) | 
-				((unsigned long)byte1 << 16) | 
-				((unsigned long)byte2 << 8) |
-				((unsigned long)byte3) );
-	return rez;
+  unsigned char byte3 = 0x000000ff & word;
+  unsigned char byte2 = ((0x0000ff00 & word) >> 8);
+  unsigned char byte1 = ((0x00ff0000 & word) >> 16);
+  unsigned char byte0 = ((0xff000000 & word) >> 24);
+  byte3 = EEPROM.read(byte3);
+  byte2 = EEPROM.read(byte2);
+  byte1 = EEPROM.read(byte1);
+  byte0 = EEPROM.read(byte0);
+  unsigned long rez = ( 
+        ((unsigned long)byte0 << 24) | 
+        ((unsigned long)byte1 << 16) | 
+        ((unsigned long)byte2 << 8) |
+        ((unsigned long)byte3) );
+  return rez;
 }
 
 unsigned long RotWord(unsigned long word) {
-	unsigned char byte3 = 0x000000ff & word;
-	unsigned char byte2 = ((0x0000ff00 & word) >> 8);
-	unsigned char byte1 = ((0x00ff0000 & word) >> 16);
-	unsigned char byte0 = ((0xff000000 & word) >> 24);
-	unsigned long rez = (
-			((unsigned long)byte1 << 24) |
-			((unsigned long)byte2 << 16) |
-			((unsigned long)byte3 << 8) |
-			((unsigned long)byte0 ) );
-	return rez;
+  unsigned char byte3 = 0x000000ff & word;
+  unsigned char byte2 = ((0x0000ff00 & word) >> 8);
+  unsigned char byte1 = ((0x00ff0000 & word) >> 16);
+  unsigned char byte0 = ((0xff000000 & word) >> 24);
+  unsigned long rez = (
+      ((unsigned long)byte1 << 24) |
+      ((unsigned long)byte2 << 16) |
+      ((unsigned long)byte3 << 8) |
+      ((unsigned long)byte0 ) );
+  return rez;
 }
 
-void keyExpansion(char key[16], unsigned long w[44]) {
+void keyExpansion(const unsigned char key[4 * Nk], unsigned long w[Nb * (Nr+1)]) {
   unsigned char Rcon[16] =
   {
      0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a 
   };
 
-	unsigned long temp;
-	int i = 0;
-	while ( i < 4 ) {
-		w[i] = ((((unsigned long)(key[4*i])) << 24) |
-		       (((unsigned long)(key[4*i+1])) << 16) |
-		       (((unsigned long)(key[4*i+2])) << 8) |
-		       ((unsigned long)(key[4*i+3])));
-		++i;
-	}
+  unsigned long temp;
+  int i = 0;
+  while ( i < Nk ) {
+    w[i] = ((((unsigned long)(key[4*i])) << 24) |
+           (((unsigned long)(key[4*i+1])) << 16) |
+           (((unsigned long)(key[4*i+2])) << 8) |
+           ((unsigned long)(key[4*i+3])));
+    ++i;
+  }
 
-	i = 10;
-	while ( i < 4 * ( 10 + 1 ) ) {
-		temp = w[i-1];
-		if ( i % 4 == 0 ) {
-			temp = RotWord(temp);
-			temp = SubWord(temp);
-			temp = temp ^ ( (unsigned long)Rcon[i/4] << 24 );
-                }
-		w[i] = w[i-4] ^ temp;
-		++i;
-	}
+  i = Nk;
+  while ( i < Nb * ( Nr + 1 ) ) {
+    temp = w[i-1];
+    if ( i % Nk == 0 ) {
+      temp = RotWord(temp);
+      temp = SubWord(temp);
+      temp = temp ^ ( (unsigned long)Rcon[i/Nk] << 24 );
+    } else {
+      if (Nk > 6 && i % Nk == 4) {
+        temp = SubWord(temp);
+      }
+    }
+    w[i] = w[i-Nk] ^ temp;
+    ++i;
+  }
 }
 
-bool encryptPassword(char* password, char* key, byte KEY_SIZE, char* encryptedPassword) {
+bool encryptPassword(const unsigned char* password,const unsigned char* key, byte KEY_SIZE, unsigned char* encryptedPassword) {
 
-  if( strlen(password) % KEY_SIZE == 0 ) {
-    unsigned long expansionKey[44];
-    memset(expansionKey, 0, 44 * sizeof(unsigned long));
+  if( strlen((char*)password) % KEY_SIZE == 0 ) {
+    unsigned long expansionKey[Nb * (Nr + 1)];
+    memset(expansionKey, 0, Nb * (Nr + 1) * sizeof(unsigned long));
     keyExpansion(key, expansionKey);
 
-    int steps = strlen(password) / KEY_SIZE;
+    int steps = strlen((char*)password) / KEY_SIZE;
     int contor = 0;
     while ( contor < steps ) {
       cipher(&password[contor * KEY_SIZE], expansionKey, &encryptedPassword[contor * KEY_SIZE]);
@@ -314,14 +321,14 @@ bool encryptPassword(char* password, char* key, byte KEY_SIZE, char* encryptedPa
   return false;
 }
 
-bool decryptPassword(char* encryptedPassword, char *key, byte KEY_SIZE, char* password) {
+bool decryptPassword(const unsigned char* encryptedPassword,const unsigned char *key, byte KEY_SIZE, unsigned char* password) {
 
-   if ( strlen(encryptedPassword) % KEY_SIZE == 0 ) {
-    unsigned long expansionKey[44];
-    memset(expansionKey, 0, 44 * sizeof(unsigned long));
+   if ( strlen((char*)encryptedPassword) % KEY_SIZE == 0 ) {
+    unsigned long expansionKey[Nb * (Nr + 1)];
+    memset(expansionKey, 0, Nb * (Nr + 1) * sizeof(unsigned long));
     keyExpansion(key, expansionKey);
 
-    int steps = strlen(encryptedPassword) / KEY_SIZE;
+    int steps = strlen((char*)encryptedPassword) / KEY_SIZE;
     int contor = 0;
     while( contor < steps ) {
       invCipher(&encryptedPassword[contor * KEY_SIZE], expansionKey, &password[contor * KEY_SIZE]);
@@ -331,4 +338,3 @@ bool decryptPassword(char* encryptedPassword, char *key, byte KEY_SIZE, char* pa
    }
    return false;
 }
-

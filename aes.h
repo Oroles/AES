@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-bool encryptPassword(char* password, char *key, byte KEY_SIZE, char* encryptedPassword);
-bool decryptPassword(char* encryptedPassword, char *key, byte KEY_SIZE, char* password);
+bool encryptPassword(const unsigned char* password,const unsigned char *key, byte KEY_SIZE,unsigned char* encryptedPassword);
+bool decryptPassword(const unsigned char* encryptedPassword,const unsigned char *key, byte KEY_SIZE, unsigned char* password);
 
 #endif

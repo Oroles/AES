@@ -7,7 +7,6 @@
 void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* message);
 void bluetoothProcessReply(SoftwareSerial* bluetootSerial, char *command);
 void readKey();
-void sendPasswordAsKeyboard(int buttonStatus);
 void sendDataFromBuffers(SoftwareSerial* bluetoothSerial, int buttonStatus);
 
 #endif
