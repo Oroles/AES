@@ -5,7 +5,7 @@
 #include "aes.h"
 #include "utils.h"
 
-static const byte MESSAGE_SIZE = 100;
+//static const byte MESSAGE_SIZE = 100;
 
 // buffer for serial communication
 char inputSerial[MESSAGE_SIZE];
@@ -98,7 +98,7 @@ void setup() {
   Serial.begin(9600);
   bluetoothSerial->begin(9600);
   pinMode(BUTTON_PIN, INPUT);
-  readKey();
+  //readKey();
 }
 
 void loop() {

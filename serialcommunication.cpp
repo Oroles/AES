@@ -2,27 +2,19 @@
 #include "utils.h"
 #include "aes.h"
 #include "passwordgenerator.h"
-#include <Arduino.h>
 #include <EEPROM.h>
-#include "Keyboard.h"
+#include "buttonoperation.h"
+#include "memoryaccess.h"
 
-static const byte KEY_SIZE = 32;
-static const byte PASSWORD_CHUNCKS = 16;
-static const byte HASH_SIZE = 32;
-static const byte PASSWORD_SIZE = 100;
-static const byte MESSAGE_SIZE = 200;
-static const int START_KEY = 900;
-static const int START_HASH = 950;
+char key[KEY_SIZE];
 
-static char key[KEY_SIZE];
-
-void readKey() {
+/*void readKey() {
   for ( int i = 0; i < KEY_SIZE; ++i ) {
     key[i] = EEPROM.read(i + START_KEY);
   }
-}
+}*/
 
-void readHash(char* hash) {
+/*void readHash(char* hash) {
   for( int i = 0; i < HASH_SIZE; ++i ) {
     hash[i] = EEPROM.read(i + START_HASH);
   }
@@ -32,70 +24,7 @@ void writeHash(char* hash) {
   for ( int i = 0; i < HASH_SIZE; ++i ) {
     EEPROM.write(i + START_HASH, hash[i]);
   }
-}
-
-void sendToSerial(const char *message)
-{
-  int i = 0;
-  while(message[i] != '\0') {
-    Serial.print(message[i++]);
-  }
-}
-
-void sendAsKeyboard(const char* message)
-{
-  if (strlen(message) != 0) {
-    Keyboard.begin();
-    Keyboard.print(message);
-    Keyboard.end();
-  }
-}
-
-void sendToBluetooth(SoftwareSerial* serial, const char* message)
-{
-  int i = 0;
-  while( message[i] != '\0' ) {
-    serial->print(message[i++]);
-  }
-}
-
-
-static char dataBuffer[PASSWORD_SIZE];
-void storeInDataBuffer( char * message )
-{
-  memset(dataBuffer, '\0', PASSWORD_SIZE);
-  memcpy(dataBuffer, message, strlen(message) + 1);
-}
-
-static boolean enableOtherBluetoothOperations = false;
-enum LastOperation{ Pc, Phone, Button, None };
-
-static LastOperation lastOperation = None;
-static int lastButtonStatus = LOW;
-void sendDataFromBuffers(SoftwareSerial* bluetoothSerial, int buttonStatus)
-{
-  if (buttonStatus != lastButtonStatus) {
-     if (buttonStatus == HIGH) {
-       if (lastOperation == Pc) {
-        sendToBluetooth(bluetoothSerial, dataBuffer);
-       }
-       else {
-        if (lastOperation == Phone) {
-         sendAsKeyboard(dataBuffer); 
-        }
-        else {
-          if (lastOperation == Button) {
-            sendToBluetooth(bluetoothSerial, dataBuffer);
-            enableOtherBluetoothOperations = true;
-          }
-        }
-       }
-       lastOperation = None;
-       memcpy(dataBuffer, '\0', PASSWORD_SIZE);
-     }
-  }
-  lastButtonStatus = buttonStatus;
-}
+}*/
 
 void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
 {
@@ -116,7 +45,7 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
         getLastMessage(inputString, password);
         if (encryptPassword((const unsigned char*)password, (const unsigned char*)key, PASSWORD_CHUNCKS, (unsigned char*)encryptedPassword)) {
           generateBluetoothAddMessage(inputString, encryptedPassword, strlen(password), message);
-          lastOperation = Pc;
+          setLastOperation(Pc);
           storeInDataBuffer(message);
         } else {
           Serial.print(F("1:Fail\n"));
@@ -130,13 +59,13 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
       break;
     case 3:
       { // delete entry - no need to process, send directly to phone
-        lastOperation = Pc;
+        setLastOperation(Pc);
         storeInDataBuffer(inputString);
       }
       break;
     case 4:
       { // obtain websites - no need to process, send directly to phone
-        lastOperation = Pc;
+        setLastOperation(Pc);
         storeInDataBuffer(inputString);
       }
       break;
@@ -150,7 +79,7 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
         if (generatePassword(inputString, password, PASSWORD_CHUNCKS)) {
           if (encryptPassword((const unsigned char*)password, (const unsigned char*)key, PASSWORD_CHUNCKS, (unsigned char*)encryptedPassword)) {
             generateBluetoothAddMessage(inputString, encryptedPassword, strlen(password), message);
-            lastOperation = Pc;
+            setLastOperation(Pc);
             storeInDataBuffer(message);
             Serial.print(F("7\rStored in Buffer\n"));
           } else {
@@ -164,6 +93,7 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
     case 8:
       {
         Serial.print(F("8\rConnected\n"));
+        break;
       }
     default:
       {
@@ -172,6 +102,15 @@ void serialProcessRequest(SoftwareSerial* bluetoothSerial, char* inputString)
       break;   
   }
 }
+
+/*void displayMessage(char* message, byte KEY_SIZE) {
+  Serial.println("--------------------------------");
+  for (int index = 0; index < KEY_SIZE; ++index) {
+    Serial.print(message[index], HEX);
+    Serial.print(" ");
+  }
+  Serial.println("");
+}*/
 
 void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
 {  
@@ -187,10 +126,10 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
   
   int typeCommand = getTypeCommand(inputString);
 
-  if (typeCommand != 6 && enableOtherBluetoothOperations == false)
+  /*if (typeCommand != 6 && getEnableBluetoothOperations() == false)
   {
     return;
-  }
+  }*/
   
   switch (typeCommand)
   {
@@ -201,13 +140,17 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
       break;
     case 2:
       { // retrive entry
+        Serial.print("Received send password request");
         getLastMessage(inputString, encryptedPassword);
         generateShortPassword(encryptedPassword, shortEncryptedPassword);
 
         if (decryptPassword((unsigned char*)shortEncryptedPassword, (unsigned char*)key, PASSWORD_CHUNCKS, (unsigned char*)password)) {
           generateSerialRetriveMessage(password, message);
-          lastOperation = Phone;
-          storeInDataBuffer(message);       
+          setLastOperation(Phone);
+          storeInDataBuffer(message);
+        }
+        else {
+          sendToBluetooth(bluetoothSerial, "10\rError\n");
         }
       }
       break;
@@ -235,14 +178,21 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
         memset(hash, '\0', HASH_SIZE);
         readHash(hash);
         generateBluetoothRetrieveHash(hash, HASH_SIZE, message); //message = 6:hash_value\n
-        //sendToBluetooth(bluetoothSerial, message);
         storeInDataBuffer(message);
-        lastOperation = Button;
+        setLastOperation(Button);
       }
       break;
     case 7:
       { // generate password
         sendToSerial(inputString);
+      }
+      break;
+    case 8:
+      { // get the salt
+        char salt[SALT_SIZE];
+        memset(salt, '\0', SALT_SIZE);
+        getLastMessage(inputString, salt);
+        readKey(key, KEY_SIZE, salt);
       }
       break;
     case 9:
