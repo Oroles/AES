@@ -22,20 +22,6 @@ const int BUTTON_PIN = 2;
 // interface to bluetooth
 SoftwareSerial* bluetoothSerial = new SoftwareSerial(10, 11);
 
-// process the message received on the serial
-void receiveSerialMessage()
-{
-  if (serialComplete) {
-    serialProcessRequest(bluetoothSerial, inputSerial);
-    //bluetoothSerial->write(inputSerial);
-
-    // clear data
-    memset(&inputSerial[0], 0, MESSAGE_SIZE);
-    sizeInputSerial = 0;
-    serialComplete = false;
-  }
-}
-
 // process the message received on the bluetooth
 void receiveBluetoothMessage()
 {
@@ -47,28 +33,6 @@ void receiveBluetoothMessage()
     memset(&inputBluetooth[0], 0, MESSAGE_SIZE);
     sizeInputBluetooth = 0;
     bluetoothComplete = false;
-  }
-}
-
-// read data on the serial
-void serialEvent() {
-  while (Serial.available()) {
-    // get the new byte:
-    char inChar = (char)Serial.read();
-    inputSerial[sizeInputSerial++] = inChar;
-    
-    // check not to overflow buffer
-    if ( sizeInputSerial >= MESSAGE_SIZE )
-    {
-      //read to much data so ignore command, therefore
-      sizeInputSerial = 0;
-      break;
-    }
-    
-    if (inChar == '\n') {
-      serialComplete = true;
-      break;
-    }
   }
 }
 
@@ -98,13 +62,10 @@ void setup() {
   Serial.begin(9600);
   bluetoothSerial->begin(9600);
   pinMode(BUTTON_PIN, INPUT);
-  //readKey();
 }
 
 void loop() {
-   receiveSerialMessage();
    receiveBluetoothMessage();
-   serialEvent();
    bluetoothEvent();
    sendDataFromBuffers(bluetoothSerial, digitalRead(BUTTON_PIN));
 }

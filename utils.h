@@ -17,12 +17,27 @@ const byte MESSAGE_SIZE = 200;
 const int START_KEY = 900;
 const int START_HASH = 950;
 
+/*enum MessageTypes
+{
+  AddEntry = 0x31,
+  SendPassword = 0x32,
+  StoreInBuffer = 0x33,
+  CloseMessageType = 0x35,
+  RetrieveHashType = 0x36,
+  MessageGenerated = 0x37,
+  DecryptKey = 0x38,
+  IsAlive = 0x39,
+  ErrorMessage = 0x3B
+}*/
+
 int getTypeCommand(const char* message);
 void generateBluetoothAddMessage(const char* input, const char* password, int passwordLength, char* message);
 void generateShortPassword(const char* longPassword, char *password);
 void generateSerialRetriveMessage(const char* password, char* message);
 void generateBluetoothRetrieveHash(const char* hash, int l, char* message);
-void generateSerialClose(char* message);
+void generateErrorMessage(char* message);
+void generateStoredInBuffer(char* message);
+void generateIsAliveMessage(char* message);
 
 bool getLastMessage(const char* input, char* result);
 const char* getNOccurrence( const char* input, int n, const char c);

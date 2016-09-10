@@ -5,7 +5,7 @@ const byte PASSWORD_SIZE = 100;
 
 bool enableOtherBluetoothOperations = false;
 int lastButtonStatus = LOW;
-LastOperation lastOperation = None;
+MessageReceiver messageReceiver = None;
 char dataBuffer[PASSWORD_SIZE];
 
 void sendAsKeyboard(const char* message)
@@ -25,14 +25,6 @@ void sendToBluetooth(SoftwareSerial* serial, const char* message)
   }
 }
 
-void sendToSerial(const char *message)
-{
-  int i = 0;
-  while(message[i] != '\0') {
-    Serial.print(message[i++]);
-  }
-}
-
 void storeInDataBuffer( char * message )
 {
   memset(dataBuffer, '\0', PASSWORD_SIZE);
@@ -43,30 +35,24 @@ void sendDataFromBuffers(SoftwareSerial* bluetoothSerial, int buttonStatus)
 {
   if (buttonStatus != lastButtonStatus) {
      if (buttonStatus == HIGH) {
-       if (lastOperation == Pc) {
+       if (messageReceiver == Phone) {
         sendToBluetooth(bluetoothSerial, dataBuffer);
        }
        else {
-        if (lastOperation == Phone) {
+        if (messageReceiver == Pc) {
          sendAsKeyboard(dataBuffer); 
         }
-        else {
-          if (lastOperation == Button) {
-            sendToBluetooth(bluetoothSerial, dataBuffer);
-            enableOtherBluetoothOperations = true;
-          }
-        }
        }
-       lastOperation = None;
+       messageReceiver = None;
        memcpy(dataBuffer, '\0', PASSWORD_SIZE);
      }
   }
   lastButtonStatus = buttonStatus;
 }
 
-void setLastOperation(LastOperation operation)
+void setMessageReceiver(MessageReceiver receiver)
 {
-  lastOperation = operation;
+  messageReceiver = receiver;
 }
 
 void setEnableBluetoothOperations(boolean enable)

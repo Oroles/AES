@@ -18,7 +18,7 @@ int getTypeCommand(const char* message) {
   if ( lengthString < 1 ) {
     return -1;
   }
-  int type = message[0] - '0';
+  int type = message[0];
   return type;
 }
 
@@ -106,16 +106,11 @@ void generateSerialRetriveMessage(const char* password, char* message) {
 }
 
 void generateBluetoothRetrieveHash(const char* hash, int l, char* message) {
-  message[0] = '6';
+  message[0] = '0' + 6;
   message[1] = SPLITTER;
   strncpy(&message[2], hash, l);
   message[2 + l] = '\n';
 }
-
-void generateSerialClose(char* message) {
-  strncpy(message, "5\n", 2);
-}
-
 
 void generateShortPassword(const char* longPassword, char *password)
 {
@@ -126,5 +121,23 @@ void generateShortPassword(const char* longPassword, char *password)
     unsigned char LSB = asciiToHex(longPassword[i+1]);
     password[i/2] = ( ( MSB << 4 ) | LSB );
   }
+}
+
+void generateErrorMessage(char* message)
+{
+  message[0] = '0' + 11;
+  memcpy(&message[1], "\rError\n", 8);
+}
+
+void generateStoredInBuffer(char* message)
+{
+  message[0] = '0' + 3;
+  memcpy(&message[1], "\rStored In Buffer\n", 18);
+}
+
+void generateIsAliveMessage(char* message)
+{
+  message[0] = '0' + 9;
+  message[1] = END_COMMAND;
 }
 
