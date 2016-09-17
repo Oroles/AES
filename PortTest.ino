@@ -1,19 +1,15 @@
 #include <SoftwareSerial.h>
 
-
 #include "serialcommunication.h"
-#include "aes.h"
 #include "utils.h"
-
-//static const byte MESSAGE_SIZE = 100;
+#include "setkey.h"
 
 // buffer for serial communication
-char inputSerial[MESSAGE_SIZE];
-unsigned char sizeInputSerial = 0;
+char inputSerial[INPUT_SIZE];
 boolean serialComplete = false;
 
 // buffer for bluetooth communication
-char inputBluetooth[MESSAGE_SIZE];
+char inputBluetooth[INPUT_SIZE];
 unsigned char sizeInputBluetooth = 0;
 boolean bluetoothComplete = false;
 
@@ -27,10 +23,9 @@ void receiveBluetoothMessage()
 {
   if (bluetoothComplete) {
     bluetoothProcessReply(bluetoothSerial, inputBluetooth);
-    //Serial.write(inputBluetooth);
     
     // clear data
-    memset(&inputBluetooth[0], 0, MESSAGE_SIZE);
+    memset(&inputBluetooth[0], 0, INPUT_SIZE);
     sizeInputBluetooth = 0;
     bluetoothComplete = false;
   }
@@ -43,7 +38,7 @@ void bluetoothEvent() {
     char inChar = (char)bluetoothSerial->read();
   
     // check not to overflow buffer
-    if( sizeInputBluetooth >= MESSAGE_SIZE )
+    if( sizeInputBluetooth >= INPUT_SIZE )
     {
       //read to much data so ignore command, therefore
       sizeInputBluetooth = 0;
@@ -60,12 +55,31 @@ void bluetoothEvent() {
 
 void setup() {
   Serial.begin(9600);
+  while(!Serial);
   bluetoothSerial->begin(9600);
   pinMode(BUTTON_PIN, INPUT);
+  memset(inputSerial, INPUT_SIZE, '\0');
+  memset(inputBluetooth, INPUT_SIZE, '\0'); 
+}
+
+enum ProgramMode { SET_KEY, PASSWORD_MANAGER };
+ProgramMode mode = PASSWORD_MANAGER;
+
+void serialEvent() {
+  while (Serial.available()) {
+    mode = SET_KEY;
+    readInput(inputSerial);
+  }
 }
 
 void loop() {
-   receiveBluetoothMessage();
-   bluetoothEvent();
+   serialEvent();
+   if (mode == PASSWORD_MANAGER) {
+    bluetoothEvent();
+    receiveBluetoothMessage();
+   } else {
+    processKey(inputSerial, INPUT_SIZE);
+   }
+   
    sendDataFromBuffers(bluetoothSerial, digitalRead(BUTTON_PIN));
 }

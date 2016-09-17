@@ -26,7 +26,7 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
   {
     return;
   }*/
-  Serial.print(typeCommand);
+  Serial.println(typeCommand);
   switch (typeCommand)
   {
     case '0' + 1:
@@ -78,21 +78,35 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
         setEnableBluetoothOperations(true);
       }
       break;
+     case '0' + 4:
+      {
+        char lastTimeUsed[LAST_TIME_USED_SIZE];
+        memset(lastTimeUsed, '\0', LAST_TIME_USED_SIZE);
+        readLastTimeUsed(lastTimeUsed);
+        generateBluetoothLastTimeUsed(lastTimeUsed, LAST_TIME_USED_SIZE, message);
+        Serial.print(message);
+        sendToBluetooth(bluetoothSerial, message);
+      }
+      break;
+    case '0' + 10:
+      {
+        char lastTimeUsed[LAST_TIME_USED_SIZE];
+        memset(lastTimeUsed, '\0', LAST_TIME_USED_SIZE);
+        getLastMessage(inputString, lastTimeUsed);
+        writeLastTimeUsed(lastTimeUsed);
+      }
+      break;
+    
     case '0' + 7:
       { // generate password
-        Serial.println("Generate Password");
-        Serial.print(inputString);
-        Serial.flush();
         if ((generatePassword(inputString, password, PASSWORD_CHUNCKS)) &&
            (encryptPassword((const unsigned char*)password, (const unsigned char*)key, PASSWORD_CHUNCKS, (unsigned char*)encryptedPassword))) {
-            Serial.println("Password Generated");
             generateBluetoothAddMessage(inputString, encryptedPassword, strlen(password), message);
             setMessageReceiver(Phone);
             storeInDataBuffer(message);
             memset(message, '\0', MESSAGE_SIZE);
             generateStoredInBuffer(message);
             sendToBluetooth(bluetoothSerial, message);
-            Serial.println("Everything is perfect");
         } else {
           generateErrorMessage(message);
           sendToBluetooth(bluetoothSerial, message);

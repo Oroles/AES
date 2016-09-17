@@ -6,6 +6,9 @@
 void readHash(char* hash);
 void writeHash(char* hash);
 
+void readLastTimeUsed(char* hash);
+void writeLastTimeUsed(char* hash);
+
 void readKey(char* key, byte keySize, const char* salt);
 
 #endif

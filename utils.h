@@ -10,12 +10,16 @@ const char PADDING = '\t';
 
 const byte KEY_SIZE = 32;
 const byte SALT_SIZE = 32;
+const byte LAST_TIME_USED_SIZE = 32;
 const byte PASSWORD_CHUNCKS = 16;
 const byte HASH_SIZE = 32;
 const byte PASSWORD_SIZE = 100;
+const byte INPUT_SIZE = 100;
 const byte MESSAGE_SIZE = 200;
 const int START_KEY = 900;
-const int START_HASH = 950;
+const int START_HASH = 932;
+const int START_LAST_TIME_USED = 964;
+const int S_INV_START_EEPROM = 512;
 
 /*enum MessageTypes
 {
@@ -35,11 +39,14 @@ void generateBluetoothAddMessage(const char* input, const char* password, int pa
 void generateShortPassword(const char* longPassword, char *password);
 void generateSerialRetriveMessage(const char* password, char* message);
 void generateBluetoothRetrieveHash(const char* hash, int l, char* message);
+void generateBluetoothLastTimeUsed(const char* lastTimeUsed, int l, char* message);
 void generateErrorMessage(char* message);
 void generateStoredInBuffer(char* message);
 void generateIsAliveMessage(char* message);
 
 bool getLastMessage(const char* input, char* result);
 const char* getNOccurrence( const char* input, int n, const char c);
+unsigned char asciiToHex( char data );
+long getLong(const char* v);
 
 #endif

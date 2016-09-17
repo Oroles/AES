@@ -27,6 +27,7 @@ void sendToBluetooth(SoftwareSerial* serial, const char* message)
 
 void storeInDataBuffer( char * message )
 {
+  Serial.println(message);
   memset(dataBuffer, '\0', PASSWORD_SIZE);
   memcpy(dataBuffer, message, strlen(message) + 1);
 }
@@ -35,6 +36,8 @@ void sendDataFromBuffers(SoftwareSerial* bluetoothSerial, int buttonStatus)
 {
   if (buttonStatus != lastButtonStatus) {
      if (buttonStatus == HIGH) {
+      Serial.println(F("Button is pressed"));
+      Serial.println(messageReceiver);
        if (messageReceiver == Phone) {
         sendToBluetooth(bluetoothSerial, dataBuffer);
        }

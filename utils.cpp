@@ -84,6 +84,23 @@ char hexToAscii( char data ) {
   }
 }
 
+long getLong(const char* v) {
+  long result = 0;
+  sscanf(v, "%ld", &result);
+  return result;
+}
+
+void generateShortPassword(const char* longPassword, char *password)
+{
+  unsigned char i = 0;
+  for( i = 0; i < strlen(longPassword); i+=2 )
+  {
+    unsigned char MSB = asciiToHex(longPassword[i]);
+    unsigned char LSB = asciiToHex(longPassword[i+1]);
+    password[i/2] = ( ( MSB << 4 ) | LSB );
+  }
+}
+
 void generateBluetoothAddMessage(const char* input, const char* password, int passwordLength, char* message) {
   // get the 3rd occurence of ':'
   const char* p = getNOccurrence(input, 3, SPLITTER);
@@ -112,21 +129,17 @@ void generateBluetoothRetrieveHash(const char* hash, int l, char* message) {
   message[2 + l] = '\n';
 }
 
-void generateShortPassword(const char* longPassword, char *password)
-{
-  unsigned char i = 0;
-  for( i = 0; i < strlen(longPassword); i+=2 )
-  {
-    unsigned char MSB = asciiToHex(longPassword[i]);
-    unsigned char LSB = asciiToHex(longPassword[i+1]);
-    password[i/2] = ( ( MSB << 4 ) | LSB );
-  }
+void generateBluetoothLastTimeUsed(const char* lastTimeUsed, int l, char* message) {
+  message[0] = '0' + 4;
+  message[1] = SPLITTER;
+  strncpy(&message[2], lastTimeUsed, l);
+  message[2 + l] = '\n';
 }
 
 void generateErrorMessage(char* message)
 {
   message[0] = '0' + 11;
-  memcpy(&message[1], "\rError\n", 8);
+  memcpy(&message[1], "\rError\n", 7);
 }
 
 void generateStoredInBuffer(char* message)

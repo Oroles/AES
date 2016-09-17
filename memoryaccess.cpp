@@ -15,6 +15,21 @@ void writeHash(char* hash) {
   }
 }
 
+void readLastTimeUsed(char* lastTimeUsed) {
+  for (int i = 0; i < LAST_TIME_USED_SIZE; ++i) {
+    lastTimeUsed[i] = EEPROM.read(i + START_LAST_TIME_USED);
+  }
+}
+
+void writeLastTimeUsed(char* lastTimeUsed) {
+  for (int i = 0; i < LAST_TIME_USED_SIZE; ++i) {
+    if (lastTimeUsed[i] != '\0')
+      EEPROM.write(i + START_LAST_TIME_USED, lastTimeUsed[i]);
+    else
+      EEPROM.write(i + START_LAST_TIME_USED, '\t');
+  }
+}
+
 void swap(char* a, char* b) {
   char t = *a;
   *a = *b;
@@ -36,12 +51,6 @@ void readKey(char* key, byte l) {
   for ( int i = 0; i < l; ++i ) {
     key[i] = EEPROM.read(i + START_KEY);
   }
-}
-
-long getLong(const char* v) {
-  long result = 0;
-  sscanf(v, "%ld", &result);
-  return result;
 }
 
 void readKey(char* key, byte keySize, const char* salt) {

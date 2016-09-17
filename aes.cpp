@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "aes.h"
+#include "utils.h"
 
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
@@ -7,8 +8,6 @@
 #define Nb 4
 #define Nk 8
 #define Nr 14
-
-static const int S_INV_START_EEPROM = 512;
 
 /*const unsigned char s[256] = 
 {
