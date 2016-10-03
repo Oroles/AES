@@ -36,6 +36,9 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
           generateBluetoothAddMessage(inputString, encryptedPassword, strlen(password), message);
           setMessageReceiver(Phone);
           storeInDataBuffer(message);
+          memset(message, '\0', MESSAGE_SIZE);
+          generateStoredInBuffer(message);
+          sendToBluetooth(bluetoothSerial, message);
         }
         else {
           generateErrorMessage(message);
@@ -84,7 +87,7 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
         memset(lastTimeUsed, '\0', LAST_TIME_USED_SIZE);
         readLastTimeUsed(lastTimeUsed);
         generateBluetoothLastTimeUsed(lastTimeUsed, LAST_TIME_USED_SIZE, message);
-        Serial.print(message);
+        //Serial.print(message);
         sendToBluetooth(bluetoothSerial, message);
       }
       break;

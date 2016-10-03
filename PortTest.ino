@@ -18,10 +18,22 @@ const int BUTTON_PIN = 2;
 // interface to bluetooth
 SoftwareSerial* bluetoothSerial = new SoftwareSerial(10, 11);
 
+//debug purpose
+void printReceivedMessage(char* msg, int l)
+{
+  Serial.println("~~~~~~~~~~~");
+  for (int i = 0; i < l; ++i) {
+    Serial.print(msg[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+}
+
 // process the message received on the bluetooth
 void receiveBluetoothMessage()
 {
   if (bluetoothComplete) {
+    printReceivedMessage(inputBluetooth, sizeInputBluetooth);
     bluetoothProcessReply(bluetoothSerial, inputBluetooth);
     
     // clear data
@@ -48,6 +60,7 @@ void bluetoothEvent() {
     inputBluetooth[sizeInputBluetooth++] = inChar;
     if (inChar == '\n') {
       bluetoothComplete = true;
+      receiveBluetoothMessage();
       break;
     }
   }
@@ -55,7 +68,7 @@ void bluetoothEvent() {
 
 void setup() {
   Serial.begin(9600);
-  while(!Serial);
+  //while(!Serial);
   bluetoothSerial->begin(9600);
   pinMode(BUTTON_PIN, INPUT);
   memset(inputSerial, INPUT_SIZE, '\0');
@@ -65,15 +78,15 @@ void setup() {
 enum ProgramMode { SET_KEY, PASSWORD_MANAGER };
 ProgramMode mode = PASSWORD_MANAGER;
 
-void serialEvent() {
+void readEvent() {
   while (Serial.available()) {
+    //Serial.print("HIGH");
     mode = SET_KEY;
     readInput(inputSerial);
   }
 }
 
 void loop() {
-   serialEvent();
    if (mode == PASSWORD_MANAGER) {
     bluetoothEvent();
     receiveBluetoothMessage();
@@ -82,4 +95,5 @@ void loop() {
    }
    
    sendDataFromBuffers(bluetoothSerial, digitalRead(BUTTON_PIN));
+   readEvent();
 }
