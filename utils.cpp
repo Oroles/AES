@@ -145,7 +145,7 @@ void generateErrorMessage(char* message)
 void generateStoredInBuffer(char* message)
 {
   message[0] = '0' + 3;
-  memcpy(&message[1], "\rPress the button\n", 18);
+  memcpy(&message[1], "\rPress the button on device\n", 29);
 }
 
 void generateIsAliveMessage(char* message)
