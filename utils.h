@@ -21,23 +21,13 @@ const int START_HASH = 932;
 const int START_LAST_TIME_USED = 964;
 const int S_INV_START_EEPROM = 512;
 
-/*enum MessageTypes
-{
-  AddEntry = 0x31,
-  SendPassword = 0x32,
-  StoreInBuffer = 0x33,
-  CloseMessageType = 0x35,
-  RetrieveHashType = 0x36,
-  MessageGenerated = 0x37,
-  DecryptKey = 0x38,
-  IsAlive = 0x39,
-  ErrorMessage = 0x3B
-}*/
 
 int getTypeCommand(const char* message);
+byte getPasswordLength(const char* input);
 void generateBluetoothAddMessage(const char* input, const char* password, int passwordLength, char* message);
+void generateBluetoothAddNote(const char* input, const char* password, int passwordLength, char* message);
 void generateShortPassword(const char* longPassword, char *password);
-void generateSerialRetriveMessage(const char* password, char* message);
+void generateSerialRetriveInfo(const char* password, char* message);
 void generateBluetoothRetrieveHash(const char* hash, int l, char* message);
 void generateBluetoothLastTimeUsed(const char* lastTimeUsed, int l, char* message);
 void generateErrorMessage(char* message);

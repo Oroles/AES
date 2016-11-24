@@ -320,14 +320,14 @@ bool encryptPassword(const unsigned char* password,const unsigned char* key, byt
   return false;
 }
 
-bool decryptPassword(const unsigned char* encryptedPassword,const unsigned char *key, byte KEY_SIZE, unsigned char* password) {
+bool decryptPassword(const unsigned char* encryptedPassword,const unsigned char *key, byte KEY_SIZE, byte l, unsigned char* password) {
 
-   if ( strlen((char*)encryptedPassword) % KEY_SIZE == 0 ) {
+   if ( l % KEY_SIZE == 0 ) {
     unsigned long expansionKey[Nb * (Nr + 1)];
     memset(expansionKey, 0, Nb * (Nr + 1) * sizeof(unsigned long));
     keyExpansion(key, expansionKey);
 
-    int steps = strlen((char*)encryptedPassword) / KEY_SIZE;
+    int steps = l / KEY_SIZE;
     int contor = 0;
     while( contor < steps ) {
       invCipher(&encryptedPassword[contor * KEY_SIZE], expansionKey, &password[contor * KEY_SIZE]);

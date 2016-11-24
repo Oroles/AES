@@ -2,7 +2,6 @@
 #include "utils.h"
 #include "aes.h"
 #include "passwordgenerator.h"
-#include <EEPROM.h>
 #include "buttonoperation.h"
 #include "memoryaccess.h"
 
@@ -21,12 +20,7 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
   memset(message, 0, MESSAGE_SIZE);
   
   int typeCommand = getTypeCommand(inputString);
-
-  /*if (typeCommand != 6 && getEnableBluetoothOperations() == false)
-  {
-    return;
-  }*/
-  Serial.println(typeCommand);
+  
   switch (typeCommand)
   {
     case '0' + 1:
@@ -46,13 +40,14 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
         }
       }
       break;
-    case '0' + 2:
-      { // retrive entry
+    case '0' + 2: //retrive password
+    case '0' + 13: //retrive note 
+      {
         getLastMessage(inputString, encryptedPassword);
         generateShortPassword(encryptedPassword, shortEncryptedPassword);
-
-        if (decryptPassword((unsigned char*)shortEncryptedPassword, (unsigned char*)key, PASSWORD_CHUNCKS, (unsigned char*)password)) {
-          generateSerialRetriveMessage(password, message);
+        byte l = getPasswordLength(inputString);
+        if (decryptPassword((unsigned char*)shortEncryptedPassword, (unsigned char*)key, PASSWORD_CHUNCKS, l, (unsigned char*)password)) {
+          generateSerialRetriveInfo(password, message);
           setMessageReceiver(Pc);
           storeInDataBuffer(message);
         }
@@ -128,6 +123,23 @@ void bluetoothProcessReply(SoftwareSerial* bluetoothSerial, char *inputString)
       { // is alive message
         generateIsAliveMessage(message);
         sendToBluetooth(bluetoothSerial, message);
+      }
+      break;
+    case '0' + 12:
+      { //add note
+        getLastMessage(inputString, password);//password = note text
+        if (encryptPassword((const unsigned char*)password, (const unsigned char*)key, PASSWORD_CHUNCKS, (unsigned char*)encryptedPassword)) {
+          generateBluetoothAddNote(inputString, encryptedPassword, strlen(password), message);
+          setMessageReceiver(Phone);
+          storeInDataBuffer(message);
+          
+          generateStoredInBuffer(message);
+          sendToBluetooth(bluetoothSerial, message);
+        }
+        else {
+          generateErrorMessage(message);
+          sendToBluetooth(bluetoothSerial, message);
+        }
       }
       break;
     default:

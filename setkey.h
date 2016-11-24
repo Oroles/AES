@@ -3,6 +3,5 @@
 
 void readInput(char* inputSerial);
 void processKey(char* inputSerial, int l);
-//void processSalt(char* inputSerial, int l);
 
 #endif 

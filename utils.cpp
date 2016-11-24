@@ -1,5 +1,5 @@
 #include "utils.h"
-#include <EEPROM.h>
+#//include <EEPROM.h>
 
 const char* getNOccurrence( const char* input, int n, const char c) {
   const char* p = input;
@@ -30,6 +30,14 @@ bool getLastMessage(const char* input, char* result) {
   }
   strncpy(result, p1+1, p2-p1-1);
   return true;
+}
+
+byte getPasswordLength(const char* input) {
+  const char* p1 = strchr(input, SPLITTER);
+  const char* p2 = strrchr(input, SPLITTER);
+  char tmp[10];
+  strncpy(tmp, p1+1, p2-p1-1);
+  return (byte)getLong(tmp);
 }
 
 unsigned char asciiToHex( char data ) {
@@ -116,7 +124,22 @@ void generateBluetoothAddMessage(const char* input, const char* password, int pa
   message[strlen(message)] = '\n';
 }
 
-void generateSerialRetriveMessage(const char* password, char* message) {
+void generateBluetoothAddNote(const char* input, const char* password, int passwordLength, char* message) {
+  // get the 2rd occurence of ':'
+  const char* p = getNOccurrence(input, 2, SPLITTER);
+  
+  int sizeData = p - input;
+  strncpy(message, input, sizeData + 1); //copies the code, website and username in message
+  for ( int i = 0, j = 0; i < passwordLength; ++i, ++j ) {
+    char msb = hexToAscii((0xF0 & password[i]) >> 4 );
+    char lsb = hexToAscii(0x0F & password[i]);
+    message[2 * j + sizeData + 1] = msb;
+    message[2 * j + 1 + sizeData + 1] = lsb;
+  }
+  message[strlen(message)] = '\n';
+}
+
+void generateSerialRetriveInfo(const char* password, char* message) {
   const char *p = strchr(password, PADDING);
   strncpy(message, password, p - password);
   message[p-password] = '\0';
@@ -145,7 +168,7 @@ void generateErrorMessage(char* message)
 void generateStoredInBuffer(char* message)
 {
   message[0] = '0' + 3;
-  memcpy(&message[1], "\rPress the button on device\n", 29);
+  memcpy(&message[1], "\rPress the button on device\n", 28);
 }
 
 void generateIsAliveMessage(char* message)
